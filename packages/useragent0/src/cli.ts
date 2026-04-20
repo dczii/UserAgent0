@@ -181,6 +181,79 @@ program
     console.log();
   });
 
+// ─── useragent0 test ──────────────────────────────────────────────────────────
+
+program
+  .command('test')
+  .description('Test the MCP server connection and list available tools')
+  .option('-p, --port <number>', 'Port the server is running on', '4000')
+  .action(async (opts) => {
+    printBanner();
+    const port = parseInt(opts.port, 10);
+    const base = `http://localhost:${port}`;
+    let allPassed = true;
+
+    console.log(teal('  Running MCP connection tests...'));
+    console.log();
+
+    // 1. Health check
+    try {
+      const res = await fetch(`${base}/health`);
+      if (res.ok) {
+        console.log(green('  ✓') + `  Server reachable at ${bold(`${base}`)}`);
+      } else {
+        console.log(red('  ✗') + `  Server returned ${res.status}`);
+        allPassed = false;
+      }
+    } catch {
+      console.log(red('  ✗') + `  Server not running at ${base}`);
+      console.log(dim(`       Run: useragent0 start`));
+      allPassed = false;
+    }
+
+    // 2. MCP endpoint
+    try {
+      const res = await fetch(`${base}/mcp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list', params: {} }),
+      });
+      const json = await res.json() as { result?: { tools?: { name: string }[] }; error?: unknown };
+      const tools: { name: string }[] = json?.result?.tools ?? [];
+      if (tools.length > 0) {
+        console.log(green('  ✓') + `  MCP endpoint responding — ${bold(String(tools.length))} tools available`);
+        tools.forEach(t => console.log(dim(`       • ${t.name}`)));
+      } else {
+        console.log(red('  ✗') + '  MCP endpoint returned no tools');
+        allPassed = false;
+      }
+    } catch (err) {
+      console.log(red('  ✗') + '  MCP endpoint unreachable');
+      allPassed = false;
+    }
+
+    // 3. DB / repos
+    try {
+      const { DBClient, DB_PATH } = await import('./core');
+      const db = new DBClient(DB_PATH);
+      const repos = db.listRepos();
+      db.close();
+      console.log(green('  ✓') + `  Database OK — ${bold(String(repos.length))} repo(s) registered`);
+    } catch {
+      console.log(red('  ✗') + '  Could not connect to database');
+      allPassed = false;
+    }
+
+    console.log();
+    if (allPassed) {
+      console.log(green('  All tests passed.') + dim(' Your IDE can now use useragent0 via MCP.'));
+    } else {
+      console.log(red('  Some tests failed.') + dim(' Make sure useragent0 start is running.'));
+      process.exit(1);
+    }
+    console.log();
+  });
+
 // ─── useragent0 config ────────────────────────────────────────────────────────
 
 program
@@ -265,7 +338,16 @@ fi
 `;
 
   const prePush = `#!/bin/sh
-# useragent0: notify PR agent
+# useragent0: run MCP test then notify PR agent
+echo "  useragent0: checking MCP connection..."
+if command -v useragent0 >/dev/null 2>&1; then
+  useragent0 test --port 4000
+  if [ $? -ne 0 ]; then
+    echo "  useragent0: MCP test failed. Start the server with: useragent0 start"
+    exit 1
+  fi
+fi
+
 CARD_ID=$(cat .agents/.current-card 2>/dev/null)
 if [ -n "$CARD_ID" ]; then
   curl -s -X PATCH http://localhost:4000/api/cards/$CARD_ID/move \\
