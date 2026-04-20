@@ -1,7 +1,7 @@
 {
-  "name": "@agents-kit/server",
+  "name": "@useragent0/server",
   "version": "1.0.0",
-  "description": "Local Express + WebSocket server for agents-kit",
+  "description": "Local Express + WebSocket server for useragent0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -10,7 +10,7 @@
     "start": "node dist/index.js"
   },
   "dependencies": {
-    "@agents-kit/core": "*",
+    "@useragent0/core": "*",
     "cors": "^2.8.5",
     "express": "^4.18.2",
     "ws": "^8.16.0"

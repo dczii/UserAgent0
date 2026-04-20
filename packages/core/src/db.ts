@@ -15,12 +15,12 @@ import type {
 
 // ─── Paths ────────────────────────────────────────────────────────────────────
 
-export const AGENTS_KIT_DIR = path.join(os.homedir(), '.agents-kit');
-export const DB_PATH = path.join(AGENTS_KIT_DIR, 'agents.db');
+export const USERAGENT0_DIR = path.join(os.homedir(), '.useragent0');
+export const DB_PATH = path.join(USERAGENT0_DIR, 'agents.db');
 
 function ensureDir(): void {
-  if (!fs.existsSync(AGENTS_KIT_DIR)) {
-    fs.mkdirSync(AGENTS_KIT_DIR, { recursive: true });
+  if (!fs.existsSync(USERAGENT0_DIR)) {
+    fs.mkdirSync(USERAGENT0_DIR, { recursive: true });
   }
 }
 

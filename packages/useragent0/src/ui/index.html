@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>agents-kit</title>
+  <title>useragent0</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -311,7 +311,7 @@
 
 <!-- Header -->
 <header>
-  <span class="logo">agents-kit</span>
+  <span class="logo">useragent0</span>
   <div class="divider"></div>
   <select class="repo-select" id="repoSelect" onchange="selectRepo(this.value)">
     <option value="">Loading repos…</option>
@@ -337,7 +337,7 @@
     </div>
     <div class="mcp-hint">
       <div class="mcp-hint-title">IDE MCP Setup</div>
-      <div class="mcp-hint-code">{ "agents-kit": {<br>&nbsp;&nbsp;"url": "http://localhost:3000/mcp"<br>} }</div>
+      <div class="mcp-hint-code">{ "useragent0": {<br>&nbsp;&nbsp;"url": "http://localhost:3000/mcp"<br>} }</div>
     </div>
   </div>
 </div>
@@ -448,7 +448,7 @@
     repos = await res.json();
     const sel = document.getElementById('repoSelect');
     if (!repos.length) {
-      sel.innerHTML = '<option value="">No repos — run: agents-kit init</option>';
+      sel.innerHTML = '<option value="">No repos — run: useragent0 init</option>';
       return;
     }
     sel.innerHTML = repos.map(r => `<option value="${r.id}">${r.name}</option>`).join('');

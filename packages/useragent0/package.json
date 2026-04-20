@@ -1,9 +1,9 @@
 {
-  "name": "agents-kit",
+  "name": "useragent0",
   "version": "1.0.0",
   "description": "AI developer agents for any repository — MCP-powered, local-first. Zero external dependencies beyond Node.js.",
   "bin": {
-    "agents-kit": "./dist/cli.js"
+    "useragent0": "./dist/cli.js"
   },
   "main": "dist/cli.js",
   "files": [
@@ -14,7 +14,7 @@
   "scripts": {
     "build": "tsc",
     "prepare": "npm run build",
-    "preinstall": "node -e \"if(process.versions.node.split('.')[0] < 18) { console.error('agents-kit requires Node.js 18+'); process.exit(1); }\""
+    "preinstall": "node -e \"if(process.versions.node.split('.')[0] < 18) { console.error('useragent0 requires Node.js 18+'); process.exit(1); }\""
   },
   "dependencies": {
     "better-sqlite3": "^9.4.3",
@@ -54,6 +54,6 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/dczii/agents-kit.git"
+    "url": "https://github.com/dczii/useragent0.git"
   }
 }

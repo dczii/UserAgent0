@@ -3,7 +3,7 @@ import path from 'path';
 import os from 'os';
 import type { GlobalConfig } from './types';
 
-const CONFIG_PATH = path.join(os.homedir(), '.agents-kit', 'config.json');
+const CONFIG_PATH = path.join(os.homedir(), '.useragent0', 'config.json');
 
 const DEFAULTS: GlobalConfig = {
   default_model: 'claude-sonnet-4-6',

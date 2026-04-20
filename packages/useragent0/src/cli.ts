@@ -16,7 +16,7 @@ const green = (s: string) => chalk.green(s);
 
 function printBanner() {
   console.log();
-  console.log(teal('  agents-kit'));
+  console.log(teal('  useragent0'));
   console.log(dim('  AI developer agents for any repository'));
   console.log();
 }
@@ -24,11 +24,11 @@ function printBanner() {
 // ─── Program ──────────────────────────────────────────────────────────────────
 
 program
-  .name('agents-kit')
+  .name('useragent0')
   .description('Local-first AI developer agents — MCP-powered, zero external dependencies')
   .version('1.0.0');
 
-// ─── agents-kit start ─────────────────────────────────────────────────────────
+// ─── useragent0 start ─────────────────────────────────────────────────────────
 
 program
   .command('start')
@@ -38,7 +38,7 @@ program
     printBanner();
     const port = parseInt(opts.port, 10);
 
-    console.log(teal('  Starting agents-kit server...'));
+    console.log(teal('  Starting useragent0 server...'));
     console.log();
 
     try {
@@ -50,7 +50,7 @@ program
       console.log(dim(`     MCP → `) + bold(`http://localhost:${port}/mcp`));
       console.log();
       console.log(dim('  Add to your IDE MCP config:'));
-      console.log(dim('  ') + chalk.cyan(`{ "agents-kit": { "url": "http://localhost:${port}/mcp" } }`));
+      console.log(dim('  ') + chalk.cyan(`{ "useragent0": { "url": "http://localhost:${port}/mcp" } }`));
       console.log();
 
       // Open UI in browser
@@ -67,11 +67,11 @@ program
     }
   });
 
-// ─── agents-kit init ──────────────────────────────────────────────────────────
+// ─── useragent0 init ──────────────────────────────────────────────────────────
 
 program
   .command('init')
-  .description('Register the current repository with agents-kit and install git hooks')
+  .description('Register the current repository with useragent0 and install git hooks')
   .action(async () => {
     printBanner();
 
@@ -87,7 +87,7 @@ program
       process.exit(1);
     }
 
-    console.log(teal(`  Initialising agents-kit for: ${bold(repoName)}`));
+    console.log(teal(`  Initialising useragent0 for: ${bold(repoName)}`));
     console.log();
 
     const answers = await inquirer.prompt([
@@ -138,7 +138,7 @@ program
       ),
       model: {
         provider: 'ide',
-        note: 'Uses your IDE AI via MCP — no API key needed in agents-kit',
+        note: 'Uses your IDE AI via MCP — no API key needed in useragent0',
       },
       conventions: {
         commit_format: answers.commit_format,
@@ -170,18 +170,18 @@ program
       console.log(green('  ✓') + `  Repo registered  ${dim(`(id: ${repo.id.slice(0, 8)}...)`)}`);
     } catch {
       console.log();
-      console.log(dim('  (Start agents-kit server to register repo in DB)'));
+      console.log(dim('  (Start useragent0 server to register repo in DB)'));
     }
 
     console.log(green('  ✓') + '  .agents/ folder created');
     console.log(green('  ✓') + '  Git hooks installed');
     console.log(green('  ✓') + '  agents.config.json written');
     console.log();
-    console.log(dim('  Next: run ') + teal('agents-kit start') + dim(' to open the Kanban UI'));
+    console.log(dim('  Next: run ') + teal('useragent0 start') + dim(' to open the Kanban UI'));
     console.log();
   });
 
-// ─── agents-kit config ────────────────────────────────────────────────────────
+// ─── useragent0 config ────────────────────────────────────────────────────────
 
 program
   .command('config')
@@ -194,7 +194,7 @@ program
       const config = readGlobalConfig();
       printBanner();
       console.log(teal('  Global config'));
-      console.log(dim(`  Path: ~/.agents-kit/config.json`));
+      console.log(dim(`  Path: ~/.useragent0/config.json`));
       console.log();
       Object.entries(config).forEach(([k, v]) => {
         const display = k.toLowerCase().includes('key') ? '***hidden***' : String(v);
@@ -206,7 +206,7 @@ program
 
     const eqIdx = keyValue.indexOf('=');
     if (eqIdx === -1) {
-      console.error(red('  Usage: agents-kit config KEY=value'));
+      console.error(red('  Usage: useragent0 config KEY=value'));
       process.exit(1);
     }
 
@@ -216,7 +216,7 @@ program
     console.log(green('  ✓') + `  Set ${bold(key)}`);
   });
 
-// ─── agents-kit status ────────────────────────────────────────────────────────
+// ─── useragent0 status ────────────────────────────────────────────────────────
 
 program
   .command('status')
@@ -229,7 +229,7 @@ program
       const repos = db.listRepos();
 
       if (!repos.length) {
-        console.log(dim('  No repos registered yet. Run agents-kit init in a repo.'));
+        console.log(dim('  No repos registered yet. Run useragent0 init in a repo.'));
         return;
       }
 
@@ -244,7 +244,7 @@ program
       });
       db.close();
     } catch {
-      console.log(dim('  Start agents-kit server first.'));
+      console.log(dim('  Start useragent0 server first.'));
     }
   });
 
@@ -255,7 +255,7 @@ function installGitHooks(repoPath: string) {
   if (!fs.existsSync(hooksDir)) return;
 
   const postCommit = `#!/bin/sh
-# agents-kit: notify commit agent
+# useragent0: notify commit agent
 CARD_ID=$(cat .agents/.current-card 2>/dev/null)
 if [ -n "$CARD_ID" ]; then
   curl -s -X PATCH http://localhost:3000/api/cards/$CARD_ID/move \\
@@ -265,7 +265,7 @@ fi
 `;
 
   const prePush = `#!/bin/sh
-# agents-kit: notify PR agent
+# useragent0: notify PR agent
 CARD_ID=$(cat .agents/.current-card 2>/dev/null)
 if [ -n "$CARD_ID" ]; then
   curl -s -X PATCH http://localhost:3000/api/cards/$CARD_ID/move \\

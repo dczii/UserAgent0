@@ -93,7 +93,7 @@ export const MCP_TOOLS = [
   },
   {
     name: 'list_repos',
-    description: 'List all repositories registered with agents-kit.',
+    description: 'List all repositories registered with useragent0.',
     inputSchema: { type: 'object', properties: {} },
   },
   {

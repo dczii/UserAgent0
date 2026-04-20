@@ -1,11 +1,11 @@
-# agents-kit
+# useragent0
 
 > AI developer agents for any repository. MCP-powered, local-first. Zero external dependencies beyond Node.js.
 
 ## Install
 
 ```bash
-npm install -g agents-kit
+npm install -g useragent0
 ```
 
 That's it. No database to install. No server to configure. Everything is bundled.
@@ -15,7 +15,7 @@ That's it. No database to install. No server to configure. Everything is bundled
 **Step 1 — Start the monitoring server**
 
 ```bash
-agents-kit start
+useragent0 start
 ```
 
 This starts the local server on `localhost:3000` and opens the Kanban UI in your browser.
@@ -24,7 +24,7 @@ This starts the local server on `localhost:3000` and opens the Kanban UI in your
 
 ```bash
 cd your-project
-agents-kit init
+useragent0 init
 ```
 
 Follow the prompts to choose which agents to activate. Git hooks are installed automatically.
@@ -36,7 +36,7 @@ Add this to your IDE's MCP config file:
 ```json
 {
   "mcpServers": {
-    "agents-kit": {
+    "useragent0": {
       "url": "http://localhost:3000/mcp"
     }
   }
@@ -63,10 +63,10 @@ The agent creates a structured card on the Kanban board. Move it to **In Progres
 
 | Command | Description |
 |---------|-------------|
-| `agents-kit start` | Start the local server and open the Kanban UI |
-| `agents-kit init` | Register the current repo and install git hooks |
-| `agents-kit status` | Show registered repos and card counts |
-| `agents-kit config KEY=value` | Set a config value |
+| `useragent0 start` | Start the local server and open the Kanban UI |
+| `useragent0 init` | Register the current repo and install git hooks |
+| `useragent0 status` | Show registered repos and card counts |
+| `useragent0 config KEY=value` | Set a config value |
 
 ## The Kanban Workflow
 
@@ -96,13 +96,13 @@ Once connected, your IDE's AI can call these tools:
 
 ## Architecture
 
-agents-kit runs entirely on your machine:
+useragent0 runs entirely on your machine:
 
-- **SQLite** — stores all cards and agent data at `~/.agents-kit/agents.db`
+- **SQLite** — stores all cards and agent data at `~/.useragent0/agents.db`
 - **Express server** — serves the UI and MCP endpoint at `localhost:3000`
 - **Git hooks** — installed into `.git/hooks/` of each registered repo
 - **No cloud** — your code and data never leave your machine
 
 ## Repo
 
-[github.com/dczii/agents-kit](https://github.com/dczii/agents-kit)
+[github.com/dczii/useragent0](https://github.com/dczii/useragent0)

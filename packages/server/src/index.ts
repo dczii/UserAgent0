@@ -3,9 +3,9 @@ import cors from 'cors';
 import { WebSocketServer, WebSocket } from 'ws';
 import http from 'http';
 import path from 'path';
-import { DBClient, DB_PATH } from '@agents-kit/core';
-import { MCP_TOOLS } from '@agents-kit/core';
-import type { KanbanColumn, AgentId, CardAnnotation } from '@agents-kit/core';
+import { DBClient, DB_PATH } from '@useragent0/core';
+import { MCP_TOOLS } from '@useragent0/core';
+import type { KanbanColumn, AgentId, CardAnnotation } from '@useragent0/core';
 
 // ─── Setup ────────────────────────────────────────────────────────────────────
 
@@ -27,7 +27,7 @@ function broadcast(event: { type: string; payload: unknown }) {
 }
 
 wss.on('connection', (ws) => {
-  ws.send(JSON.stringify({ type: 'connected', payload: { message: 'agents-kit server connected' } }));
+  ws.send(JSON.stringify({ type: 'connected', payload: { message: 'useragent0 server connected' } }));
 });
 
 // ─── REST API ─────────────────────────────────────────────────────────────────
@@ -124,12 +124,12 @@ app.post('/api/cards/:cardId/feed', (req, res) => {
 
 // ─── MCP Endpoint ─────────────────────────────────────────────────────────────
 // Implements the MCP protocol so IDEs (Cursor, Claude Code, Windsurf)
-// can connect and call agents-kit tools directly.
+// can connect and call useragent0 tools directly.
 
 // MCP: list tools
 app.get('/mcp', (_req, res) => {
   res.json({
-    name: 'agents-kit',
+    name: 'useragent0',
     version: '1.0.0',
     description: 'AI developer agents Kanban workflow for any repository',
     tools: MCP_TOOLS,
@@ -248,7 +248,7 @@ app.get('/health', (_req, res) => res.json({ status: 'ok', db: DB_PATH }));
 
 export function startServer(port = 3000) {
   server.listen(port, () => {
-    console.log(`\n  agents-kit server running`);
+    console.log(`\n  useragent0 server running`);
     console.log(`  UI  →  http://localhost:${port}`);
     console.log(`  MCP →  http://localhost:${port}/mcp`);
     console.log(`  DB  →  ${DB_PATH}\n`);

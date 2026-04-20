@@ -1,9 +1,9 @@
 {
-  "name": "@agents-kit/cli",
+  "name": "@useragent0/cli",
   "version": "1.0.0",
   "description": "AI developer agents for any repository — local-first, MCP-powered",
   "bin": {
-    "agents-kit": "./dist/cli.js"
+    "useragent0": "./dist/cli.js"
   },
   "main": "dist/cli.js",
   "scripts": {
@@ -11,8 +11,8 @@
     "dev": "ts-node src/cli.ts"
   },
   "dependencies": {
-    "@agents-kit/core": "*",
-    "@agents-kit/server": "*",
+    "@useragent0/core": "*",
+    "@useragent0/server": "*",
     "chalk": "^5.3.0",
     "commander": "^12.0.0",
     "inquirer": "^9.2.15",
