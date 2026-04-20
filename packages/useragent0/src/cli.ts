@@ -33,7 +33,7 @@ program
 program
   .command('start')
   .description('Start the local server and open the monitoring UI')
-  .option('-p, --port <number>', 'Port to run the server on', '3000')
+  .option('-p, --port <number>', 'Port to run the server on', '4000')
   .action(async (opts) => {
     printBanner();
     const port = parseInt(opts.port, 10);

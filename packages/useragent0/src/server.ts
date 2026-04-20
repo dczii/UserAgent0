@@ -259,7 +259,7 @@ app.get('/health', (_req, res) => res.json({ status: 'ok', db: DB_PATH }));
 
 // ─── Start ────────────────────────────────────────────────────────────────────
 
-export function startServer(port = 3000) {
+export function startServer(port = 4000) {
   server.listen(port, () => {
     console.log(`\n  useragent0 server running`);
     console.log(`  UI  →  http://localhost:${port}`);
