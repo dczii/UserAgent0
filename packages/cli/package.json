@@ -1,0 +1,30 @@
+{
+  "name": "agents-kit",
+  "version": "1.0.0",
+  "description": "AI developer agents for any repository — local-first, MCP-powered",
+  "bin": {
+    "agents-kit": "./dist/cli.js"
+  },
+  "main": "dist/cli.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "ts-node src/cli.ts"
+  },
+  "dependencies": {
+    "@agents-kit/core": "*",
+    "@agents-kit/server": "*",
+    "chalk": "^5.3.0",
+    "commander": "^12.0.0",
+    "inquirer": "^9.2.15",
+    "open": "^10.1.0"
+  },
+  "devDependencies": {
+    "@types/inquirer": "^9.0.7",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.0",
+    "ts-node": "^10.9.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
