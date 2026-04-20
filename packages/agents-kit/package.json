@@ -1,0 +1,58 @@
+{
+  "name": "agents-kit",
+  "version": "1.0.0",
+  "description": "AI developer agents for any repository — MCP-powered, local-first. Zero external dependencies beyond Node.js.",
+  "bin": {
+    "agents-kit": "./dist/cli.js"
+  },
+  "main": "dist/cli.js",
+  "files": [
+    "dist/",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "prepare": "npm run build",
+    "preinstall": "node -e \"if(process.versions.node.split('.')[0] < 18) { console.error('agents-kit requires Node.js 18+'); process.exit(1); }\""
+  },
+  "dependencies": {
+    "better-sqlite3": "^9.4.3",
+    "chalk": "^5.3.0",
+    "commander": "^12.0.0",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "inquirer": "^9.2.15",
+    "open": "^10.1.0",
+    "uuid": "^9.0.0",
+    "ws": "^8.16.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.8",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/inquirer": "^9.0.9",
+    "@types/node": "^20.0.0",
+    "@types/uuid": "^9.0.7",
+    "@types/ws": "^8.5.10",
+    "typescript": "^5.3.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "ai",
+    "agents",
+    "mcp",
+    "developer-tools",
+    "kanban",
+    "local-first",
+    "cursor",
+    "claude-code"
+  ],
+  "author": "dczii",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dczii/agents-kit.git"
+  }
+}
