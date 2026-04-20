@@ -19,18 +19,18 @@ cd your-project
 useragent0 init
 
 # 3. Add to your IDE MCP config
-# { "mcpServers": { "useragent0": { "url": "http://localhost:3000/mcp" } } }
+# { "mcpServers": { "useragent0": { "url": "http://localhost:4000/mcp" } } }
 ```
 
 ## Monorepo Structure
 
-| Package | Description |
-|---------|-------------|
+| Package               | Description                                                  |
+| --------------------- | ------------------------------------------------------------ |
 | `packages/useragent0` | **The installable npm package** — standalone, self-contained |
-| `packages/core` | TypeScript types, SQLite DB client, MCP tool schemas |
-| `packages/server` | Express + WebSocket + MCP server |
-| `packages/cli` | CLI commands (init, start, config, status) |
-| `packages/ui` | Next.js Kanban monitoring UI |
+| `packages/core`       | TypeScript types, SQLite DB client, MCP tool schemas         |
+| `packages/server`     | Express + WebSocket + MCP server                             |
+| `packages/cli`        | CLI commands (init, start, config, status)                   |
+| `packages/ui`         | Next.js Kanban monitoring UI                                 |
 
 ## The Kanban Flow
 
@@ -42,15 +42,15 @@ Each column is owned by an agent. Your IDE's AI calls useragent0 via MCP.
 
 ## MCP Tools
 
-| Tool | Description |
-|------|-------------|
+| Tool          | Description                          |
+| ------------- | ------------------------------------ |
 | `create_card` | Create task cards from a requirement |
-| `list_repos` | List registered repositories |
-| `list_cards` | List cards, filtered by column |
-| `get_card` | Full card details + agent log |
-| `move_card` | Move card to a column |
-| `append_log` | Record agent progress |
-| `bounce_card` | Return card with failure annotation |
+| `list_repos`  | List registered repositories         |
+| `list_cards`  | List cards, filtered by column       |
+| `get_card`    | Full card details + agent log        |
+| `move_card`   | Move card to a column                |
+| `append_log`  | Record agent progress                |
+| `bounce_card` | Return card with failure annotation  |
 
 ## Repo
 

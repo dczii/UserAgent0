@@ -1,524 +1,780 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>useragent0</title>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>useragent0</title>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
 
-    :root {
-      --navy:       #0D1B2A;
-      --navy-mid:   #1A2F45;
-      --navy-light: #243B55;
-      --teal:       #00C9A7;
-      --teal-dim:   #00C9A722;
-      --accent:     #FFD166;
-      --pink:       #F06595;
-      --green:      #22C55E;
-      --purple:     #7C3AED;
-      --red:        #EF4444;
-      --slate:      #8FA8C0;
-      --text:       #E2E8F0;
-      --border:     #243B55;
-    }
+      :root {
+        --navy: #0d1b2a;
+        --navy-mid: #1a2f45;
+        --navy-light: #243b55;
+        --teal: #00c9a7;
+        --teal-dim: #00c9a722;
+        --accent: #ffd166;
+        --pink: #f06595;
+        --green: #22c55e;
+        --purple: #7c3aed;
+        --red: #ef4444;
+        --slate: #8fa8c0;
+        --text: #e2e8f0;
+        --border: #243b55;
+      }
 
-    body {
-      background: var(--navy);
-      color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
+      body {
+        background: var(--navy);
+        color: var(--text);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
 
-    /* ── Header ── */
-    header {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 10px 16px;
-      border-bottom: 1px solid var(--border);
-      background: var(--navy);
-      flex-shrink: 0;
-    }
-    .logo { font-weight: 700; font-size: 16px; color: var(--teal); letter-spacing: -0.3px; }
-    .divider { width: 1px; height: 16px; background: var(--border); }
-    .repo-select {
-      background: var(--navy-mid);
-      color: var(--text);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 4px 8px;
-      font-size: 13px;
-      outline: none;
-      cursor: pointer;
-    }
-    .connection-dot {
-      width: 8px; height: 8px; border-radius: 50%;
-      background: var(--red); transition: background 0.3s;
-      margin-left: auto;
-    }
-    .connection-dot.connected { background: var(--teal); }
-    .connection-label { font-size: 11px; color: var(--slate); }
+      /* ── Header ── */
+      header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 16px;
+        border-bottom: 1px solid var(--border);
+        background: var(--navy);
+        flex-shrink: 0;
+      }
+      .logo {
+        font-weight: 700;
+        font-size: 16px;
+        color: var(--teal);
+        letter-spacing: -0.3px;
+      }
+      .divider {
+        width: 1px;
+        height: 16px;
+        background: var(--border);
+      }
+      .repo-select {
+        background: var(--navy-mid);
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 4px 8px;
+        font-size: 13px;
+        outline: none;
+        cursor: pointer;
+      }
+      .connection-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--red);
+        transition: background 0.3s;
+        margin-left: auto;
+      }
+      .connection-dot.connected {
+        background: var(--teal);
+      }
+      .connection-label {
+        font-size: 11px;
+        color: var(--slate);
+      }
 
-    .new-card-btn {
-      margin-left: 8px;
-      background: var(--teal);
-      color: var(--navy);
-      border: none;
-      border-radius: 6px;
-      padding: 5px 12px;
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: opacity 0.15s;
-    }
-    .new-card-btn:hover { opacity: 0.85; }
+      .new-card-btn {
+        margin-left: 8px;
+        background: var(--teal);
+        color: var(--navy);
+        border: none;
+        border-radius: 6px;
+        padding: 5px 12px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: opacity 0.15s;
+      }
+      .new-card-btn:hover {
+        opacity: 0.85;
+      }
 
-    /* ── Layout ── */
-    .main-layout {
-      display: flex;
-      flex: 1;
-      overflow: hidden;
-    }
+      /* ── Layout ── */
+      .main-layout {
+        display: flex;
+        flex: 1;
+        overflow: hidden;
+      }
 
-    /* ── Board ── */
-    .board {
-      flex: 1;
-      overflow-x: auto;
-      padding: 16px;
-    }
-    .columns {
-      display: flex;
-      gap: 10px;
-      height: 100%;
-      min-width: max-content;
-    }
+      /* ── Board ── */
+      .board {
+        flex: 1;
+        overflow-x: auto;
+        padding: 16px;
+      }
+      .columns {
+        display: flex;
+        gap: 10px;
+        height: 100%;
+        min-width: max-content;
+      }
 
-    /* ── Column ── */
-    .column {
-      width: 210px;
-      flex-shrink: 0;
-      display: flex;
-      flex-direction: column;
-    }
-    .col-header {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      margin-bottom: 10px;
-      padding: 0 2px;
-    }
-    .col-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-    .col-name { font-size: 11px; font-weight: 600; color: var(--slate); text-transform: uppercase; letter-spacing: 0.06em; }
-    .col-count { font-size: 11px; color: var(--slate); margin-left: auto; }
-    .col-gate { font-size: 11px; }
+      /* ── Column ── */
+      .column {
+        width: 210px;
+        flex-shrink: 0;
+        display: flex;
+        flex-direction: column;
+      }
+      .col-header {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 10px;
+        padding: 0 2px;
+      }
+      .col-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .col-name {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--slate);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+      .col-count {
+        font-size: 11px;
+        color: var(--slate);
+        margin-left: auto;
+      }
+      .col-gate {
+        font-size: 11px;
+      }
 
-    .col-cards {
-      flex: 1;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      padding-right: 2px;
-    }
+      .col-cards {
+        flex: 1;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding-right: 2px;
+      }
 
-    /* ── Card ── */
-    .card {
-      background: var(--navy-mid);
-      border-radius: 8px;
-      padding: 10px 12px;
-      cursor: pointer;
-      transition: background 0.15s, transform 0.1s;
-      border: 1px solid var(--border);
-      border-left: 3px solid transparent;
-    }
-    .card:hover { background: var(--navy-light); transform: translateY(-1px); }
-    .card-title { font-size: 12px; font-weight: 500; color: var(--text); line-height: 1.4; margin-bottom: 8px; }
-    .card-tags { display: flex; flex-wrap: wrap; gap: 4px; }
-    .tag {
-      font-size: 10px; font-weight: 600;
-      padding: 2px 6px; border-radius: 4px;
-    }
-    .bounce-badge { font-size: 10px; font-weight: 600; color: var(--red); }
+      /* ── Card ── */
+      .card {
+        background: var(--navy-mid);
+        border-radius: 8px;
+        padding: 10px 12px;
+        cursor: pointer;
+        transition:
+          background 0.15s,
+          transform 0.1s;
+        border: 1px solid var(--border);
+        border-left: 3px solid transparent;
+      }
+      .card:hover {
+        background: var(--navy-light);
+        transform: translateY(-1px);
+      }
+      .card-title {
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--text);
+        line-height: 1.4;
+        margin-bottom: 8px;
+      }
+      .card-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+      }
+      .tag {
+        font-size: 10px;
+        font-weight: 600;
+        padding: 2px 6px;
+        border-radius: 4px;
+      }
+      .bounce-badge {
+        font-size: 10px;
+        font-weight: 600;
+        color: var(--red);
+      }
 
-    /* ── Sidebar ── */
-    .sidebar {
-      width: 260px;
-      flex-shrink: 0;
-      border-left: 1px solid var(--border);
-      background: var(--navy-mid);
-      display: flex;
-      flex-direction: column;
-      padding: 14px;
-      gap: 12px;
-      overflow: hidden;
-    }
-    .sidebar-title { font-size: 11px; font-weight: 600; color: var(--slate); text-transform: uppercase; letter-spacing: 0.06em; }
-    .feed-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
-    .feed-item {
-      font-size: 11px; color: var(--slate);
-      border-left: 2px solid var(--teal);
-      padding: 4px 8px;
-      line-height: 1.4;
-    }
-    .feed-time { font-size: 10px; color: var(--navy-light); display: block; margin-bottom: 2px; }
-    .feed-empty { font-size: 11px; color: var(--navy-light); font-style: italic; }
+      /* ── Sidebar ── */
+      .sidebar {
+        width: 260px;
+        flex-shrink: 0;
+        border-left: 1px solid var(--border);
+        background: var(--navy-mid);
+        display: flex;
+        flex-direction: column;
+        padding: 14px;
+        gap: 12px;
+        overflow: hidden;
+      }
+      .sidebar-title {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--slate);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+      .feed-list {
+        flex: 1;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .feed-item {
+        font-size: 11px;
+        color: var(--slate);
+        border-left: 2px solid var(--teal);
+        padding: 4px 8px;
+        line-height: 1.4;
+      }
+      .feed-time {
+        font-size: 10px;
+        color: var(--navy-light);
+        display: block;
+        margin-bottom: 2px;
+      }
+      .feed-empty {
+        font-size: 11px;
+        color: var(--navy-light);
+        font-style: italic;
+      }
 
-    .mcp-hint {
-      background: var(--navy-light);
-      border-radius: 8px;
-      padding: 10px 12px;
-    }
-    .mcp-hint-title { font-size: 11px; font-weight: 600; color: var(--teal); margin-bottom: 6px; }
-    .mcp-hint-code { font-size: 10px; font-family: 'Courier New', monospace; color: var(--slate); line-height: 1.5; word-break: break-all; }
+      .mcp-hint {
+        background: var(--navy-light);
+        border-radius: 8px;
+        padding: 10px 12px;
+      }
+      .mcp-hint-title {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--teal);
+        margin-bottom: 6px;
+      }
+      .mcp-hint-code {
+        font-size: 10px;
+        font-family: "Courier New", monospace;
+        color: var(--slate);
+        line-height: 1.5;
+        word-break: break-all;
+      }
 
-    /* ── Detail Panel ── */
-    .detail-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.65);
-      z-index: 100;
-    }
-    .detail-overlay.open { display: block; }
-    .detail-panel {
-      position: absolute;
-      right: 0; top: 0; bottom: 0;
-      width: 460px;
-      background: var(--navy-mid);
-      overflow-y: auto;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-    .detail-header { display: flex; align-items: flex-start; gap: 12px; }
-    .detail-col-label { font-size: 11px; font-weight: 600; margin-bottom: 4px; }
-    .detail-title { font-size: 16px; font-weight: 700; color: white; line-height: 1.35; flex: 1; }
-    .detail-close { font-size: 20px; color: var(--slate); cursor: pointer; line-height: 1; background: none; border: none; padding: 2px; }
-    .detail-close:hover { color: white; }
+      /* ── Detail Panel ── */
+      .detail-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.65);
+        z-index: 100;
+      }
+      .detail-overlay.open {
+        display: block;
+      }
+      .detail-panel {
+        position: absolute;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        width: 460px;
+        background: var(--navy-mid);
+        overflow-y: auto;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+      .detail-header {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+      }
+      .detail-col-label {
+        font-size: 11px;
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+      .detail-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: white;
+        line-height: 1.35;
+        flex: 1;
+      }
+      .detail-close {
+        font-size: 20px;
+        color: var(--slate);
+        cursor: pointer;
+        line-height: 1;
+        background: none;
+        border: none;
+        padding: 2px;
+      }
+      .detail-close:hover {
+        color: white;
+      }
 
-    .detail-section-title {
-      font-size: 11px; font-weight: 600; color: var(--slate);
-      text-transform: uppercase; letter-spacing: 0.06em;
-      margin-bottom: 8px;
-    }
-    .detail-desc { font-size: 13px; color: var(--slate); line-height: 1.6; }
-    .criteria-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
-    .criteria-item { display: flex; gap: 8px; font-size: 13px; color: var(--slate); }
-    .criteria-check { color: var(--teal); flex-shrink: 0; }
+      .detail-section-title {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--slate);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        margin-bottom: 8px;
+      }
+      .detail-desc {
+        font-size: 13px;
+        color: var(--slate);
+        line-height: 1.6;
+      }
+      .criteria-list {
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .criteria-item {
+        display: flex;
+        gap: 8px;
+        font-size: 13px;
+        color: var(--slate);
+      }
+      .criteria-check {
+        color: var(--teal);
+        flex-shrink: 0;
+      }
 
-    .annotation-box {
-      background: #EF444411;
-      border: 1px solid #EF444433;
-      border-radius: 8px;
-      padding: 12px;
-    }
-    .annotation-title { font-size: 11px; font-weight: 600; color: var(--red); margin-bottom: 8px; }
-    .annotation-text { font-size: 12px; color: var(--slate); line-height: 1.5; }
+      .annotation-box {
+        background: #ef444411;
+        border: 1px solid #ef444433;
+        border-radius: 8px;
+        padding: 12px;
+      }
+      .annotation-title {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--red);
+        margin-bottom: 8px;
+      }
+      .annotation-text {
+        font-size: 12px;
+        color: var(--slate);
+        line-height: 1.5;
+      }
 
-    .file-chips { display: flex; flex-wrap: wrap; gap: 4px; }
-    .file-chip { font-size: 11px; font-family: monospace; background: var(--navy); padding: 3px 8px; border-radius: 4px; color: var(--slate); }
+      .file-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+      }
+      .file-chip {
+        font-size: 11px;
+        font-family: monospace;
+        background: var(--navy);
+        padding: 3px 8px;
+        border-radius: 4px;
+        color: var(--slate);
+      }
 
-    .move-btn {
-      width: 100%;
-      padding: 10px;
-      border-radius: 8px;
-      border: none;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: opacity 0.15s;
-      color: var(--navy);
-    }
-    .move-btn:hover { opacity: 0.85; }
+      .move-btn {
+        width: 100%;
+        padding: 10px;
+        border-radius: 8px;
+        border: none;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: opacity 0.15s;
+        color: var(--navy);
+      }
+      .move-btn:hover {
+        opacity: 0.85;
+      }
 
-    .log-list { display: flex; flex-direction: column; gap: 6px; max-height: 240px; overflow-y: auto; }
-    .log-item { font-size: 11px; border-left: 2px solid var(--navy-light); padding: 4px 8px; }
-    .log-agent { font-weight: 600; color: var(--teal); }
-    .log-action { color: var(--slate); }
-    .log-time { color: var(--navy-light); float: right; }
-    .log-detail { color: var(--slate); margin-top: 2px; }
+      .log-list {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        max-height: 240px;
+        overflow-y: auto;
+      }
+      .log-item {
+        font-size: 11px;
+        border-left: 2px solid var(--navy-light);
+        padding: 4px 8px;
+      }
+      .log-agent {
+        font-weight: 600;
+        color: var(--teal);
+      }
+      .log-action {
+        color: var(--slate);
+      }
+      .log-time {
+        color: var(--navy-light);
+        float: right;
+      }
+      .log-detail {
+        color: var(--slate);
+        margin-top: 2px;
+      }
 
-    /* ── New Card Modal ── */
-    .modal-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.7);
-      z-index: 200;
-      align-items: center;
-      justify-content: center;
-    }
-    .modal-overlay.open { display: flex; }
-    .modal {
-      background: var(--navy-mid);
-      border-radius: 12px;
-      padding: 24px;
-      width: 480px;
-      border: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-    }
-    .modal-title { font-size: 16px; font-weight: 700; color: white; }
-    .modal label { font-size: 12px; font-weight: 600; color: var(--slate); display: block; margin-bottom: 5px; }
-    .modal input, .modal textarea, .modal select {
-      width: 100%;
-      background: var(--navy);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      color: var(--text);
-      padding: 8px 10px;
-      font-size: 13px;
-      outline: none;
-      font-family: inherit;
-    }
-    .modal input:focus, .modal textarea:focus, .modal select:focus {
-      border-color: var(--teal);
-    }
-    .modal textarea { resize: vertical; min-height: 70px; }
-    .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
-    .btn-cancel {
-      background: transparent; border: 1px solid var(--border);
-      color: var(--slate); border-radius: 6px;
-      padding: 8px 16px; font-size: 13px; cursor: pointer;
-    }
-    .btn-cancel:hover { border-color: var(--slate); }
-    .btn-create {
-      background: var(--teal); border: none;
-      color: var(--navy); border-radius: 6px;
-      padding: 8px 16px; font-size: 13px; font-weight: 600; cursor: pointer;
-    }
-    .btn-create:hover { opacity: 0.85; }
-    .btn-create:disabled { opacity: 0.5; cursor: not-allowed; }
+      /* ── New Card Modal ── */
+      .modal-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 200;
+        align-items: center;
+        justify-content: center;
+      }
+      .modal-overlay.open {
+        display: flex;
+      }
+      .modal {
+        background: var(--navy-mid);
+        border-radius: 12px;
+        padding: 24px;
+        width: 480px;
+        border: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .modal-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: white;
+      }
+      .modal label {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--slate);
+        display: block;
+        margin-bottom: 5px;
+      }
+      .modal input,
+      .modal textarea,
+      .modal select {
+        width: 100%;
+        background: var(--navy);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        color: var(--text);
+        padding: 8px 10px;
+        font-size: 13px;
+        outline: none;
+        font-family: inherit;
+      }
+      .modal input:focus,
+      .modal textarea:focus,
+      .modal select:focus {
+        border-color: var(--teal);
+      }
+      .modal textarea {
+        resize: vertical;
+        min-height: 70px;
+      }
+      .modal-actions {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+      }
+      .btn-cancel {
+        background: transparent;
+        border: 1px solid var(--border);
+        color: var(--slate);
+        border-radius: 6px;
+        padding: 8px 16px;
+        font-size: 13px;
+        cursor: pointer;
+      }
+      .btn-cancel:hover {
+        border-color: var(--slate);
+      }
+      .btn-create {
+        background: var(--teal);
+        border: none;
+        color: var(--navy);
+        border-radius: 6px;
+        padding: 8px 16px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .btn-create:hover {
+        opacity: 0.85;
+      }
+      .btn-create:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
 
-    .empty-state {
-      font-size: 11px; color: var(--navy-light);
-      text-align: center; padding: 20px 8px;
-      font-style: italic;
-    }
+      .empty-state {
+        font-size: 11px;
+        color: var(--navy-light);
+        text-align: center;
+        padding: 20px 8px;
+        font-style: italic;
+      }
 
-    ::-webkit-scrollbar { width: 4px; height: 4px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-  </style>
-</head>
-<body>
-
-<!-- Header -->
-<header>
-  <span class="logo">useragent0</span>
-  <div class="divider"></div>
-  <select class="repo-select" id="repoSelect" onchange="selectRepo(this.value)">
-    <option value="">Loading repos…</option>
-  </select>
-  <button class="new-card-btn" onclick="openNewCardModal()">+ New Card</button>
-  <div class="connection-dot" id="connDot"></div>
-  <span class="connection-label" id="connLabel">Connecting…</span>
-</header>
-
-<!-- Main -->
-<div class="main-layout">
-
-  <!-- Board -->
-  <div class="board">
-    <div class="columns" id="columns"></div>
-  </div>
-
-  <!-- Sidebar -->
-  <div class="sidebar">
-    <div class="sidebar-title">Live Feed</div>
-    <div class="feed-list" id="feedList">
-      <div class="feed-empty">Waiting for agent activity…</div>
-    </div>
-    <div class="mcp-hint">
-      <div class="mcp-hint-title">IDE MCP Setup</div>
-      <div class="mcp-hint-code">{ "useragent0": {<br>&nbsp;&nbsp;"url": "http://localhost:3000/mcp"<br>} }</div>
-    </div>
-  </div>
-</div>
-
-<!-- Card Detail Overlay -->
-<div class="detail-overlay" id="detailOverlay" onclick="handleOverlayClick(event)">
-  <div class="detail-panel" id="detailPanel"></div>
-</div>
-
-<!-- New Card Modal -->
-<div class="modal-overlay" id="modalOverlay" onclick="handleModalClick(event)">
-  <div class="modal">
-    <div class="modal-title">New Card</div>
-    <div>
-      <label>Title *</label>
-      <input id="cardTitle" type="text" placeholder="e.g. Add login button to navbar" />
-    </div>
-    <div>
-      <label>Description</label>
-      <textarea id="cardDesc" placeholder="Context, background, links…"></textarea>
-    </div>
-    <div>
-      <label>Acceptance Criteria (one per line)</label>
-      <textarea id="cardCriteria" placeholder="Button appears in navbar&#10;Clicking opens login modal&#10;Modal closes on ESC"></textarea>
-    </div>
-    <div>
-      <label>Assigned Agent *</label>
-      <select id="cardAgent">
-        <option value="frontend_dev">Frontend Dev</option>
-        <option value="backend_dev">Backend Dev</option>
+      ::-webkit-scrollbar {
+        width: 4px;
+        height: 4px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 2px;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Header -->
+    <header>
+      <span class="logo">useragent0</span>
+      <div class="divider"></div>
+      <select class="repo-select" id="repoSelect" onchange="selectRepo(this.value)">
+        <option value="">Loading repos…</option>
       </select>
+      <button class="new-card-btn" onclick="openNewCardModal()">+ New Card</button>
+      <div class="connection-dot" id="connDot"></div>
+      <span class="connection-label" id="connLabel">Connecting…</span>
+    </header>
+
+    <!-- Main -->
+    <div class="main-layout">
+      <!-- Board -->
+      <div class="board">
+        <div class="columns" id="columns"></div>
+      </div>
+
+      <!-- Sidebar -->
+      <div class="sidebar">
+        <div class="sidebar-title">Live Feed</div>
+        <div class="feed-list" id="feedList">
+          <div class="feed-empty">Waiting for agent activity…</div>
+        </div>
+        <div class="mcp-hint">
+          <div class="mcp-hint-title">IDE MCP Setup</div>
+          <div class="mcp-hint-code">
+            { "useragent0": {<br />&nbsp;&nbsp;"url": "http://localhost:4000/mcp"<br />} }
+          </div>
+        </div>
+      </div>
     </div>
-    <div>
-      <label>Complexity</label>
-      <select id="cardComplexity">
-        <option value="small">Small</option>
-        <option value="medium" selected>Medium</option>
-        <option value="large">Large</option>
-      </select>
+
+    <!-- Card Detail Overlay -->
+    <div class="detail-overlay" id="detailOverlay" onclick="handleOverlayClick(event)">
+      <div class="detail-panel" id="detailPanel"></div>
     </div>
-    <div>
-      <label>File Scope (comma-separated paths or globs)</label>
-      <input id="cardScope" type="text" placeholder="src/components/Navbar.tsx, src/styles/**" />
+
+    <!-- New Card Modal -->
+    <div class="modal-overlay" id="modalOverlay" onclick="handleModalClick(event)">
+      <div class="modal">
+        <div class="modal-title">New Card</div>
+        <div>
+          <label>Title *</label>
+          <input id="cardTitle" type="text" placeholder="e.g. Add login button to navbar" />
+        </div>
+        <div>
+          <label>Description</label>
+          <textarea id="cardDesc" placeholder="Context, background, links…"></textarea>
+        </div>
+        <div>
+          <label>Acceptance Criteria (one per line)</label>
+          <textarea
+            id="cardCriteria"
+            placeholder="Button appears in navbar&#10;Clicking opens login modal&#10;Modal closes on ESC"
+          ></textarea>
+        </div>
+        <div>
+          <label>Assigned Agent *</label>
+          <select id="cardAgent">
+            <option value="frontend_dev">Frontend Dev</option>
+            <option value="backend_dev">Backend Dev</option>
+          </select>
+        </div>
+        <div>
+          <label>Complexity</label>
+          <select id="cardComplexity">
+            <option value="small">Small</option>
+            <option value="medium" selected>Medium</option>
+            <option value="large">Large</option>
+          </select>
+        </div>
+        <div>
+          <label>File Scope (comma-separated paths or globs)</label>
+          <input
+            id="cardScope"
+            type="text"
+            placeholder="src/components/Navbar.tsx, src/styles/**"
+          />
+        </div>
+        <div class="modal-actions">
+          <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+          <button class="btn-create" id="createBtn" onclick="createCard()">Create Card</button>
+        </div>
+      </div>
     </div>
-    <div class="modal-actions">
-      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
-      <button class="btn-create" id="createBtn" onclick="createCard()">Create Card</button>
-    </div>
-  </div>
-</div>
 
-<script>
-  // ── Config ──────────────────────────────────────────────────────────────────
-  const API = '';  // same origin — Express serves this file
-  const WS_URL = `ws://${location.host}`;
+    <script>
+      // ── Config ──────────────────────────────────────────────────────────────────
+      const API = ""; // same origin — Express serves this file
+      const WS_URL = `ws://${location.host}`;
 
-  const COLUMNS = [
-    { id: 'pm_creates',  label: 'PM Creates',  color: '#00C9A7' },
-    { id: 'in_progress', label: 'In Progress', color: '#FFD166', gate: true },
-    { id: 'commit',      label: 'Commit',      color: '#7C3AED' },
-    { id: 'create_pr',   label: 'Create PR',   color: '#00C9A7' },
-    { id: 'test',        label: 'Test',        color: '#FFD166' },
-    { id: 'qa',          label: 'QA',          color: '#F06595', gate: true },
-    { id: 'done',        label: 'Done',        color: '#22C55E' },
-  ];
+      const COLUMNS = [
+        { id: "pm_creates", label: "PM Creates", color: "#00C9A7" },
+        { id: "in_progress", label: "In Progress", color: "#FFD166", gate: true },
+        { id: "commit", label: "Commit", color: "#7C3AED" },
+        { id: "create_pr", label: "Create PR", color: "#00C9A7" },
+        { id: "test", label: "Test", color: "#FFD166" },
+        { id: "qa", label: "QA", color: "#F06595", gate: true },
+        { id: "done", label: "Done", color: "#22C55E" },
+      ];
 
-  const COMPLEXITY_COLORS = { small: '#22C55E', medium: '#FFD166', large: '#EF4444' };
+      const COMPLEXITY_COLORS = { small: "#22C55E", medium: "#FFD166", large: "#EF4444" };
 
-  // ── State ───────────────────────────────────────────────────────────────────
-  let repos = [];
-  let selectedRepoId = null;
-  let cards = [];
-  let feedItems = [];
+      // ── State ───────────────────────────────────────────────────────────────────
+      let repos = [];
+      let selectedRepoId = null;
+      let cards = [];
+      let feedItems = [];
 
-  // ── WebSocket ────────────────────────────────────────────────────────────────
-  let ws;
-  function connectWS() {
-    ws = new WebSocket(WS_URL);
-    ws.onopen = () => setConnected(true);
-    ws.onclose = () => { setConnected(false); setTimeout(connectWS, 3000); };
-    ws.onerror = () => ws.close();
-    ws.onmessage = (e) => {
-      const msg = JSON.parse(e.data);
-      handleWSMessage(msg);
-    };
-  }
+      // ── WebSocket ────────────────────────────────────────────────────────────────
+      let ws;
+      function connectWS() {
+        ws = new WebSocket(WS_URL);
+        ws.onopen = () => setConnected(true);
+        ws.onclose = () => {
+          setConnected(false);
+          setTimeout(connectWS, 3000);
+        };
+        ws.onerror = () => ws.close();
+        ws.onmessage = (e) => {
+          const msg = JSON.parse(e.data);
+          handleWSMessage(msg);
+        };
+      }
 
-  function setConnected(v) {
-    document.getElementById('connDot').className = 'connection-dot' + (v ? ' connected' : '');
-    document.getElementById('connLabel').textContent = v ? 'Connected' : 'Disconnected';
-  }
+      function setConnected(v) {
+        document.getElementById("connDot").className = "connection-dot" + (v ? " connected" : "");
+        document.getElementById("connLabel").textContent = v ? "Connected" : "Disconnected";
+      }
 
-  function handleWSMessage(msg) {
-    if (['card:created','card:updated','card:column_changed','card:log_appended','card:bounced'].includes(msg.type)) {
-      loadCards();
-    }
-    if (msg.type === 'agent:live_feed') {
-      addFeedItem(msg.payload.message);
-    }
-    if (msg.type === 'repo:registered') {
-      loadRepos();
-    }
-  }
+      function handleWSMessage(msg) {
+        if (
+          [
+            "card:created",
+            "card:updated",
+            "card:column_changed",
+            "card:log_appended",
+            "card:bounced",
+          ].includes(msg.type)
+        ) {
+          loadCards();
+        }
+        if (msg.type === "agent:live_feed") {
+          addFeedItem(msg.payload.message);
+        }
+        if (msg.type === "repo:registered") {
+          loadRepos();
+        }
+      }
 
-  // ── Data Loading ─────────────────────────────────────────────────────────────
-  async function loadRepos() {
-    const res = await fetch(`${API}/api/repos`);
-    repos = await res.json();
-    const sel = document.getElementById('repoSelect');
-    if (!repos.length) {
-      sel.innerHTML = '<option value="">No repos — run: useragent0 init</option>';
-      return;
-    }
-    sel.innerHTML = repos.map(r => `<option value="${r.id}">${r.name}</option>`).join('');
-    if (!selectedRepoId || !repos.find(r => r.id === selectedRepoId)) {
-      selectedRepoId = repos[0].id;
-      sel.value = selectedRepoId;
-    }
-    loadCards();
-  }
+      // ── Data Loading ─────────────────────────────────────────────────────────────
+      async function loadRepos() {
+        const res = await fetch(`${API}/api/repos`);
+        repos = await res.json();
+        const sel = document.getElementById("repoSelect");
+        if (!repos.length) {
+          sel.innerHTML = '<option value="">No repos — run: useragent0 init</option>';
+          return;
+        }
+        sel.innerHTML = repos.map((r) => `<option value="${r.id}">${r.name}</option>`).join("");
+        if (!selectedRepoId || !repos.find((r) => r.id === selectedRepoId)) {
+          selectedRepoId = repos[0].id;
+          sel.value = selectedRepoId;
+        }
+        loadCards();
+      }
 
-  async function loadCards() {
-    if (!selectedRepoId) return;
-    const res = await fetch(`${API}/api/repos/${selectedRepoId}/cards`);
-    cards = await res.json();
-    renderBoard();
-  }
+      async function loadCards() {
+        if (!selectedRepoId) return;
+        const res = await fetch(`${API}/api/repos/${selectedRepoId}/cards`);
+        cards = await res.json();
+        renderBoard();
+      }
 
-  function selectRepo(id) {
-    selectedRepoId = id;
-    loadCards();
-  }
+      function selectRepo(id) {
+        selectedRepoId = id;
+        loadCards();
+      }
 
-  // ── Render Board ─────────────────────────────────────────────────────────────
-  function renderBoard() {
-    const container = document.getElementById('columns');
-    container.innerHTML = COLUMNS.map(col => {
-      const colCards = cards.filter(c => c.column === col.id);
-      return `
+      // ── Render Board ─────────────────────────────────────────────────────────────
+      function renderBoard() {
+        const container = document.getElementById("columns");
+        container.innerHTML = COLUMNS.map((col) => {
+          const colCards = cards.filter((c) => c.column === col.id);
+          return `
         <div class="column">
           <div class="col-header">
             <div class="col-dot" style="background:${col.color}"></div>
             <span class="col-name">${col.label}</span>
-            ${col.gate ? '<span class="col-gate" title="Human checkpoint">👤</span>' : ''}
+            ${col.gate ? '<span class="col-gate" title="Human checkpoint">👤</span>' : ""}
             <span class="col-count">${colCards.length}</span>
           </div>
           <div class="col-cards">
-            ${colCards.length
-              ? colCards.map(c => renderCard(c, col)).join('')
-              : '<div class="empty-state">No cards</div>'}
+            ${
+              colCards.length
+                ? colCards.map((c) => renderCard(c, col)).join("")
+                : '<div class="empty-state">No cards</div>'
+            }
           </div>
         </div>
       `;
-    }).join('');
-  }
+        }).join("");
+      }
 
-  function renderCard(card, col) {
-    const agentLabel = card.assigned_agent.replace('_', ' ');
-    const complexity = card.estimated_complexity;
-    return `
+      function renderCard(card, col) {
+        const agentLabel = card.assigned_agent.replace("_", " ");
+        const complexity = card.estimated_complexity;
+        return `
       <div class="card" style="border-left-color:${col.color}" onclick="openDetail('${card.id}')">
         <div class="card-title">${escHtml(card.title)}</div>
         <div class="card-tags">
           <span class="tag" style="background:#8FA8C022;color:#8FA8C0">${agentLabel}</span>
-          ${complexity ? `<span class="tag" style="background:${COMPLEXITY_COLORS[complexity]}22;color:${COMPLEXITY_COLORS[complexity]}">${complexity}</span>` : ''}
-          ${card.bounce_count > 0 ? `<span class="bounce-badge">↩ ${card.bounce_count}</span>` : ''}
+          ${complexity ? `<span class="tag" style="background:${COMPLEXITY_COLORS[complexity]}22;color:${COMPLEXITY_COLORS[complexity]}">${complexity}</span>` : ""}
+          ${card.bounce_count > 0 ? `<span class="bounce-badge">↩ ${card.bounce_count}</span>` : ""}
         </div>
       </div>
     `;
-  }
+      }
 
-  // ── Card Detail ───────────────────────────────────────────────────────────────
-  function openDetail(cardId) {
-    const card = cards.find(c => c.id === cardId);
-    if (!card) return;
-    const col = COLUMNS.find(c => c.id === card.column);
-    const colIdx = COLUMNS.findIndex(c => c.id === card.column);
-    const nextCol = COLUMNS[colIdx + 1];
+      // ── Card Detail ───────────────────────────────────────────────────────────────
+      function openDetail(cardId) {
+        const card = cards.find((c) => c.id === cardId);
+        if (!card) return;
+        const col = COLUMNS.find((c) => c.id === card.column);
+        const colIdx = COLUMNS.findIndex((c) => c.id === card.column);
+        const nextCol = COLUMNS[colIdx + 1];
 
-    const panel = document.getElementById('detailPanel');
-    panel.innerHTML = `
+        const panel = document.getElementById("detailPanel");
+        panel.innerHTML = `
       <div class="detail-header">
         <div style="flex:1">
           <div class="detail-col-label" style="color:${col.color}">${col.label}</div>
@@ -527,179 +783,243 @@
         <button class="detail-close" onclick="closeDetail()">×</button>
       </div>
 
-      ${card.description ? `
+      ${
+        card.description
+          ? `
         <div>
           <div class="detail-section-title">Description</div>
           <p class="detail-desc">${escHtml(card.description)}</p>
         </div>
-      ` : ''}
+      `
+          : ""
+      }
 
-      ${card.acceptance_criteria?.length ? `
+      ${
+        card.acceptance_criteria?.length
+          ? `
         <div>
           <div class="detail-section-title">Acceptance Criteria</div>
           <ul class="criteria-list">
-            ${card.acceptance_criteria.map(c => `
+            ${card.acceptance_criteria
+              .map(
+                (c) => `
               <li class="criteria-item">
                 <span class="criteria-check">✓</span>
                 <span>${escHtml(c)}</span>
               </li>
-            `).join('')}
+            `,
+              )
+              .join("")}
           </ul>
         </div>
-      ` : ''}
+      `
+          : ""
+      }
 
-      ${card.annotations ? `
+      ${
+        card.annotations
+          ? `
         <div class="annotation-box">
           <div class="annotation-title">↩ Bounced Back</div>
           <p class="annotation-text"><strong>Root cause:</strong> ${escHtml(card.annotations.root_cause)}</p>
-          ${card.annotations.suggested_fix ? `<p class="annotation-text" style="margin-top:6px"><strong>Fix:</strong> ${escHtml(card.annotations.suggested_fix)}</p>` : ''}
-          ${card.annotations.failed_tests?.length ? `
+          ${card.annotations.suggested_fix ? `<p class="annotation-text" style="margin-top:6px"><strong>Fix:</strong> ${escHtml(card.annotations.suggested_fix)}</p>` : ""}
+          ${
+            card.annotations.failed_tests?.length
+              ? `
             <div style="margin-top:8px;font-size:11px;color:var(--red)">Failed tests:</div>
-            ${card.annotations.failed_tests.map(t => `<div style="font-size:11px;font-family:monospace;color:var(--slate)">${escHtml(t)}</div>`).join('')}
-          ` : ''}
+            ${card.annotations.failed_tests.map((t) => `<div style="font-size:11px;font-family:monospace;color:var(--slate)">${escHtml(t)}</div>`).join("")}
+          `
+              : ""
+          }
         </div>
-      ` : ''}
+      `
+          : ""
+      }
 
-      ${card.file_scope?.length ? `
+      ${
+        card.file_scope?.length
+          ? `
         <div>
           <div class="detail-section-title">File Scope</div>
           <div class="file-chips">
-            ${card.file_scope.map(f => `<span class="file-chip">${escHtml(f)}</span>`).join('')}
+            ${card.file_scope.map((f) => `<span class="file-chip">${escHtml(f)}</span>`).join("")}
           </div>
         </div>
-      ` : ''}
+      `
+          : ""
+      }
 
-      ${nextCol ? `
+      ${
+        nextCol
+          ? `
         <button class="move-btn" style="background:${nextCol.color}"
           onclick="moveCard('${card.id}', '${nextCol.id}')">
           Move to ${nextCol.label} →
         </button>
-      ` : ''}
+      `
+          : ""
+      }
 
       <div>
         <div class="detail-section-title">Agent Log</div>
         <div class="log-list">
-          ${[...card.agent_log].reverse().map(entry => `
+          ${[...card.agent_log]
+            .reverse()
+            .map(
+              (entry) => `
             <div class="log-item">
               <span class="log-time">${new Date(entry.timestamp).toLocaleTimeString()}</span>
               <span class="log-agent">${entry.agent}</span>
               <span class="log-action"> — ${entry.action}</span>
-              ${entry.detail ? `<div class="log-detail">${escHtml(entry.detail)}</div>` : ''}
+              ${entry.detail ? `<div class="log-detail">${escHtml(entry.detail)}</div>` : ""}
             </div>
-          `).join('')}
+          `,
+            )
+            .join("")}
         </div>
       </div>
     `;
 
-    document.getElementById('detailOverlay').classList.add('open');
-  }
+        document.getElementById("detailOverlay").classList.add("open");
+      }
 
-  function closeDetail() {
-    document.getElementById('detailOverlay').classList.remove('open');
-  }
+      function closeDetail() {
+        document.getElementById("detailOverlay").classList.remove("open");
+      }
 
-  function handleOverlayClick(e) {
-    if (e.target === document.getElementById('detailOverlay')) closeDetail();
-  }
+      function handleOverlayClick(e) {
+        if (e.target === document.getElementById("detailOverlay")) closeDetail();
+      }
 
-  // ── Move Card ─────────────────────────────────────────────────────────────────
-  async function moveCard(cardId, column) {
-    await fetch(`${API}/api/cards/${cardId}/move`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ column, moved_by: 'human' }),
-    });
-    closeDetail();
-    loadCards();
-  }
+      // ── Move Card ─────────────────────────────────────────────────────────────────
+      async function moveCard(cardId, column) {
+        await fetch(`${API}/api/cards/${cardId}/move`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ column, moved_by: "human" }),
+        });
+        closeDetail();
+        loadCards();
+      }
 
-  // ── New Card Modal ────────────────────────────────────────────────────────────
-  function openNewCardModal() {
-    if (!selectedRepoId) { alert('Select or register a repo first.'); return; }
-    document.getElementById('modalOverlay').classList.add('open');
-    document.getElementById('cardTitle').focus();
-  }
+      // ── New Card Modal ────────────────────────────────────────────────────────────
+      function openNewCardModal() {
+        if (!selectedRepoId) {
+          alert("Select or register a repo first.");
+          return;
+        }
+        document.getElementById("modalOverlay").classList.add("open");
+        document.getElementById("cardTitle").focus();
+      }
 
-  function closeModal() {
-    document.getElementById('modalOverlay').classList.remove('open');
-    ['cardTitle','cardDesc','cardCriteria','cardScope'].forEach(id => document.getElementById(id).value = '');
-    document.getElementById('cardAgent').value = 'frontend_dev';
-    document.getElementById('cardComplexity').value = 'medium';
-  }
+      function closeModal() {
+        document.getElementById("modalOverlay").classList.remove("open");
+        ["cardTitle", "cardDesc", "cardCriteria", "cardScope"].forEach(
+          (id) => (document.getElementById(id).value = ""),
+        );
+        document.getElementById("cardAgent").value = "frontend_dev";
+        document.getElementById("cardComplexity").value = "medium";
+      }
 
-  function handleModalClick(e) {
-    if (e.target === document.getElementById('modalOverlay')) closeModal();
-  }
+      function handleModalClick(e) {
+        if (e.target === document.getElementById("modalOverlay")) closeModal();
+      }
 
-  async function createCard() {
-    const title = document.getElementById('cardTitle').value.trim();
-    if (!title) { document.getElementById('cardTitle').focus(); return; }
+      async function createCard() {
+        const title = document.getElementById("cardTitle").value.trim();
+        if (!title) {
+          document.getElementById("cardTitle").focus();
+          return;
+        }
 
-    const criteriaRaw = document.getElementById('cardCriteria').value.trim();
-    const scopeRaw = document.getElementById('cardScope').value.trim();
+        const criteriaRaw = document.getElementById("cardCriteria").value.trim();
+        const scopeRaw = document.getElementById("cardScope").value.trim();
 
-    const body = {
-      title,
-      description: document.getElementById('cardDesc').value.trim(),
-      acceptance_criteria: criteriaRaw ? criteriaRaw.split('\n').map(s => s.trim()).filter(Boolean) : [],
-      assigned_agent: document.getElementById('cardAgent').value,
-      estimated_complexity: document.getElementById('cardComplexity').value,
-      file_scope: scopeRaw ? scopeRaw.split(',').map(s => s.trim()).filter(Boolean) : [],
-    };
+        const body = {
+          title,
+          description: document.getElementById("cardDesc").value.trim(),
+          acceptance_criteria: criteriaRaw
+            ? criteriaRaw
+                .split("\n")
+                .map((s) => s.trim())
+                .filter(Boolean)
+            : [],
+          assigned_agent: document.getElementById("cardAgent").value,
+          estimated_complexity: document.getElementById("cardComplexity").value,
+          file_scope: scopeRaw
+            ? scopeRaw
+                .split(",")
+                .map((s) => s.trim())
+                .filter(Boolean)
+            : [],
+        };
 
-    const btn = document.getElementById('createBtn');
-    btn.disabled = true; btn.textContent = 'Creating…';
+        const btn = document.getElementById("createBtn");
+        btn.disabled = true;
+        btn.textContent = "Creating…";
 
-    try {
-      await fetch(`${API}/api/repos/${selectedRepoId}/cards`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      closeModal();
-      loadCards();
-    } finally {
-      btn.disabled = false; btn.textContent = 'Create Card';
-    }
-  }
+        try {
+          await fetch(`${API}/api/repos/${selectedRepoId}/cards`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          });
+          closeModal();
+          loadCards();
+        } finally {
+          btn.disabled = false;
+          btn.textContent = "Create Card";
+        }
+      }
 
-  // ── Live Feed ─────────────────────────────────────────────────────────────────
-  function addFeedItem(message) {
-    feedItems.unshift({ message, ts: new Date().toLocaleTimeString() });
-    if (feedItems.length > 50) feedItems.pop();
-    renderFeed();
-  }
+      // ── Live Feed ─────────────────────────────────────────────────────────────────
+      function addFeedItem(message) {
+        feedItems.unshift({ message, ts: new Date().toLocaleTimeString() });
+        if (feedItems.length > 50) feedItems.pop();
+        renderFeed();
+      }
 
-  function renderFeed() {
-    const list = document.getElementById('feedList');
-    if (!feedItems.length) {
-      list.innerHTML = '<div class="feed-empty">Waiting for agent activity…</div>';
-      return;
-    }
-    list.innerHTML = feedItems.map(f => `
+      function renderFeed() {
+        const list = document.getElementById("feedList");
+        if (!feedItems.length) {
+          list.innerHTML = '<div class="feed-empty">Waiting for agent activity…</div>';
+          return;
+        }
+        list.innerHTML = feedItems
+          .map(
+            (f) => `
       <div class="feed-item">
         <span class="feed-time">${f.ts}</span>
         ${escHtml(f.message)}
       </div>
-    `).join('');
-  }
+    `,
+          )
+          .join("");
+      }
 
-  // ── Utils ─────────────────────────────────────────────────────────────────────
-  function escHtml(s) {
-    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  }
+      // ── Utils ─────────────────────────────────────────────────────────────────────
+      function escHtml(s) {
+        return String(s || "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
 
-  // Keyboard shortcuts
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') { closeDetail(); closeModal(); }
-  });
+      // Keyboard shortcuts
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          closeDetail();
+          closeModal();
+        }
+      });
 
-  // ── Init ──────────────────────────────────────────────────────────────────────
-  connectWS();
-  loadRepos();
+      // ── Init ──────────────────────────────────────────────────────────────────────
+      connectWS();
+      loadRepos();
 
-  // Poll every 10s as a fallback in case WS misses an event
-  setInterval(loadCards, 10000);
-</script>
-</body>
+      // Poll every 10s as a fallback in case WS misses an event
+      setInterval(loadCards, 10000);
+    </script>
+  </body>
 </html>

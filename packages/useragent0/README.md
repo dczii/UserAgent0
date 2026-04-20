@@ -37,17 +37,17 @@ Add this to your IDE's MCP config file:
 {
   "mcpServers": {
     "useragent0": {
-      "url": "http://localhost:3000/mcp"
+      "url": "http://localhost:4000/mcp"
     }
   }
 }
 ```
 
-| IDE | MCP Config Location |
-|-----|-------------------|
-| Cursor | `.cursor/mcp.json` in your repo, or `~/.cursor/mcp.json` globally |
-| Claude Code | `claude_mcp_config.json` in your repo |
-| Windsurf | `.codeium/windsurf/mcp_config.json` |
+| IDE         | MCP Config Location                                               |
+| ----------- | ----------------------------------------------------------------- |
+| Cursor      | `.cursor/mcp.json` in your repo, or `~/.cursor/mcp.json` globally |
+| Claude Code | `claude_mcp_config.json` in your repo                             |
+| Windsurf    | `.codeium/windsurf/mcp_config.json`                               |
 
 **Step 4 — Create your first card**
 
@@ -61,12 +61,12 @@ The agent creates a structured card on the Kanban board. Move it to **In Progres
 
 ## Commands
 
-| Command | Description |
-|---------|-------------|
-| `useragent0 start` | Start the local server and open the Kanban UI |
-| `useragent0 init` | Register the current repo and install git hooks |
-| `useragent0 status` | Show registered repos and card counts |
-| `useragent0 config KEY=value` | Set a config value |
+| Command                       | Description                                     |
+| ----------------------------- | ----------------------------------------------- |
+| `useragent0 start`            | Start the local server and open the Kanban UI   |
+| `useragent0 init`             | Register the current repo and install git hooks |
+| `useragent0 status`           | Show registered repos and card counts           |
+| `useragent0 config KEY=value` | Set a config value                              |
 
 ## The Kanban Workflow
 
@@ -80,14 +80,14 @@ Each column is owned by an agent. You control when cards move forward. Two colum
 
 Once connected, your IDE's AI can call these tools:
 
-| Tool | What it does |
-|------|-------------|
-| `create_card` | Create task cards from a requirement |
-| `list_repos` | List all registered repositories |
-| `list_cards` | List cards, optionally filtered by column |
-| `get_card` | Get full card details including agent log |
-| `move_card` | Move a card to a different column |
-| `append_log` | Record agent progress on a card |
+| Tool          | What it does                                         |
+| ------------- | ---------------------------------------------------- |
+| `create_card` | Create task cards from a requirement                 |
+| `list_repos`  | List all registered repositories                     |
+| `list_cards`  | List cards, optionally filtered by column            |
+| `get_card`    | Get full card details including agent log            |
+| `move_card`   | Move a card to a different column                    |
+| `append_log`  | Record agent progress on a card                      |
 | `bounce_card` | Return a card to In Progress with failure annotation |
 
 ## Requirements
