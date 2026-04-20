@@ -40,7 +40,7 @@ const COLUMNS: { id: KanbanColumn; label: string; color: string }[] = [
 
 const HUMAN_GATE_COLS: KanbanColumn[] = ['in_progress', 'qa'];
 
-const API = 'http://localhost:3000';
+const API = 'http://localhost:4000';
 
 // ─── Components ───────────────────────────────────────────────────────────────
 
@@ -312,7 +312,7 @@ export default function BoardPage() {
           <div className="rounded-lg p-3 text-xs" style={{ background: '#243B55' }}>
             <div className="font-semibold text-teal mb-1">IDE MCP Setup</div>
             <div className="text-slate-400 font-mono break-all">
-              {`"agents-kit": {\n  "url": "http://localhost:3000/mcp"\n}`}
+              {`"useragent0": {\n  "url": "http://localhost:4000/mcp"\n}`}
             </div>
           </div>
         </aside>

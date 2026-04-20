@@ -1,7 +1,7 @@
 {
   "mcpServers": {
     "useragent0": {
-      "url": "http://localhost:3000/mcp"
+      "url": "http://localhost:4000/mcp"
     }
   }
 }

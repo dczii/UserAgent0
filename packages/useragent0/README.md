@@ -18,7 +18,7 @@ That's it. No database to install. No server to configure. Everything is bundled
 useragent0 start
 ```
 
-This starts the local server on `localhost:3000` and opens the Kanban UI in your browser.
+This starts the local server on `localhost:4000` and opens the Kanban UI in your browser.
 
 **Step 2 — Add agents to any repo**
 
@@ -37,7 +37,7 @@ Add this to your IDE's MCP config file:
 {
   "mcpServers": {
     "useragent0": {
-      "url": "http://localhost:3000/mcp"
+      "url": "http://localhost:4000/mcp"
     }
   }
 }
@@ -99,7 +99,7 @@ Once connected, your IDE's AI can call these tools:
 useragent0 runs entirely on your machine:
 
 - **SQLite** — stores all cards and agent data at `~/.useragent0/agents.db`
-- **Express server** — serves the UI and MCP endpoint at `localhost:3000`
+- **Express server** — serves the UI and MCP endpoint at `localhost:4000`
 - **Git hooks** — installed into `.git/hooks/` of each registered repo
 - **No cloud** — your code and data never leave your machine
 

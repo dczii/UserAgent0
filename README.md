@@ -19,7 +19,7 @@ cd your-project
 useragent0 init
 
 # 3. Add to your IDE MCP config
-# { "mcpServers": { "useragent0": { "url": "http://localhost:3000/mcp" } } }
+# { "mcpServers": { "useragent0": { "url": "http://localhost:4000/mcp" } } }
 ```
 
 ## Monorepo Structure

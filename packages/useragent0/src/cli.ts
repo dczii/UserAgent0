@@ -258,7 +258,7 @@ function installGitHooks(repoPath: string) {
 # useragent0: notify commit agent
 CARD_ID=$(cat .agents/.current-card 2>/dev/null)
 if [ -n "$CARD_ID" ]; then
-  curl -s -X PATCH http://localhost:3000/api/cards/$CARD_ID/move \\
+  curl -s -X PATCH http://localhost:4000/api/cards/$CARD_ID/move \\
     -H "Content-Type: application/json" \\
     -d '{"column":"commit","moved_by":"dev_agent"}' > /dev/null 2>&1 || true
 fi
@@ -268,7 +268,7 @@ fi
 # useragent0: notify PR agent
 CARD_ID=$(cat .agents/.current-card 2>/dev/null)
 if [ -n "$CARD_ID" ]; then
-  curl -s -X PATCH http://localhost:3000/api/cards/$CARD_ID/move \\
+  curl -s -X PATCH http://localhost:4000/api/cards/$CARD_ID/move \\
     -H "Content-Type: application/json" \\
     -d '{"column":"create_pr","moved_by":"dev_agent"}' > /dev/null 2>&1 || true
 fi

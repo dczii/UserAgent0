@@ -8,7 +8,7 @@ const CONFIG_PATH = path.join(os.homedir(), '.useragent0', 'config.json');
 const DEFAULTS: GlobalConfig = {
   default_model: 'claude-sonnet-4-6',
   default_provider: 'anthropic',
-  server_port: 3000,
+  server_port: 4000,
 };
 
 export function readGlobalConfig(): GlobalConfig {

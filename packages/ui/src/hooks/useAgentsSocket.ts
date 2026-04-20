@@ -7,7 +7,7 @@ export interface WSMessage {
   timestamp: string;
 }
 
-export function useUserAgent0Socket(serverUrl = 'ws://localhost:3000') {
+export function useUserAgent0Socket(serverUrl = 'ws://localhost:4000') {
   const [messages, setMessages] = useState<WSMessage[]>([]);
   const [connected, setConnected] = useState(false);
   const ws = useRef<WebSocket | null>(null);
