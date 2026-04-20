@@ -205,8 +205,14 @@ async function handleMCPTool(name: string, input: Record<string, unknown>) {
     }
 
     case 'append_log': {
-      const { card_id, agent, action, detail } = input as { card_id: string; agent: string; action: string; detail?: string };
-      const card = db.appendLog(card_id, { agent: agent as AgentId | 'human', action, detail });
+      const { card_id, agent, action, detail, files_changed, commands_run, outcome, next_step, tokens } = input as {
+        card_id: string; agent: string; action: string; detail?: string;
+        files_changed?: string[]; commands_run?: string[]; outcome?: string; next_step?: string; tokens?: number;
+      };
+      const card = db.appendLog(card_id, {
+        agent: agent as AgentId | 'human', action, detail,
+        files_changed, commands_run, outcome, next_step, tokens,
+      });
       if (!card) throw new Error(`Card ${card_id} not found`);
       broadcast({ type: 'card:log_appended', payload: card });
       return card;
@@ -233,6 +239,35 @@ async function handleMCPTool(name: string, input: Record<string, unknown>) {
       if (!card) throw new Error(`Card ${card_id} not found`);
       card = db.moveCard(card_id, 'in_progress', 'tester') ?? card;
       broadcast({ type: 'card:bounced', payload: card });
+      return card;
+    }
+
+    case 'set_current_card': {
+      const { card_id, repo_id } = input as { card_id: string; repo_id: string };
+      const repo = db.getRepo(repo_id);
+      if (!repo) throw new Error(`Repo ${repo_id} not found`);
+      const card = db.getCard(card_id);
+      if (!card) throw new Error(`Card ${card_id} not found`);
+      const agentsDir = path.join(repo.path, '.agents');
+      if (!fs.existsSync(agentsDir)) fs.mkdirSync(agentsDir, { recursive: true });
+      fs.writeFileSync(path.join(agentsDir, '.current-card'), card_id, 'utf-8');
+      return { ok: true, card_id, repo_path: repo.path };
+    }
+
+    case 'get_next_card': {
+      const { repo_id, assigned_agent } = input as { repo_id: string; assigned_agent?: AgentId };
+      const card = db.getNextCard(repo_id, assigned_agent);
+      if (!card) return { message: 'No pending cards found', card: null };
+      return card;
+    }
+
+    case 'update_card': {
+      const { card_id, pr_url, estimated_complexity } = input as {
+        card_id: string; pr_url?: string; estimated_complexity?: 'small' | 'medium' | 'large';
+      };
+      const card = db.updateCard(card_id, { pr_url, estimated_complexity });
+      if (!card) throw new Error(`Card ${card_id} not found`);
+      broadcast({ type: 'card:updated', payload: card });
       return card;
     }
 

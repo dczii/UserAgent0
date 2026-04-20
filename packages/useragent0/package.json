@@ -1,6 +1,6 @@
 {
   "name": "useragent0",
-  "version": "1.1.6",
+  "version": "1.2.0",
   "description": "AI developer agents for any repository — MCP-powered, local-first. Zero external dependencies beyond Node.js.",
   "bin": {
     "useragent0": "./dist/cli.js"

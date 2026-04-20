@@ -132,16 +132,21 @@ export const MCP_TOOLS = [
   },
   {
     name: 'append_log',
-    description: 'Append a log entry to a card. Use this to record agent progress, files changed, or actions taken.',
+    description: 'Append a detailed log entry to a card. Call this after every meaningful action. Be specific: describe exactly what was done, which files were changed, what commands were run, what the outcome was, and what the next step is. Vague entries like "worked on task" are not acceptable — include file paths, function names, error messages, test results, and concrete next actions.',
     inputSchema: {
       type: 'object',
       properties: {
-        card_id: { type: 'string' },
-        agent: { type: 'string' },
-        action: { type: 'string' },
-        detail: { type: 'string' },
+        card_id: { type: 'string', description: 'The card ID to log against' },
+        agent: { type: 'string', description: 'The agent performing the action (e.g. frontend_dev, tester)' },
+        action: { type: 'string', description: 'Short label for the action (e.g. "implemented login button", "fixed failing test", "refactored auth middleware")' },
+        detail: { type: 'string', description: 'Full description of what was done, why, and any relevant context or decisions made' },
+        files_changed: { type: 'array', items: { type: 'string' }, description: 'List of file paths that were created or modified (e.g. ["src/components/LoginButton.tsx", "src/styles/auth.css"])' },
+        commands_run: { type: 'array', items: { type: 'string' }, description: 'CLI commands executed (e.g. ["npm test", "npx tsc --noEmit"])' },
+        outcome: { type: 'string', description: 'Result of the action — did it succeed, fail, or partially work? Include test results or error messages.' },
+        next_step: { type: 'string', description: 'What will be done next on this card' },
+        tokens: { type: 'number', description: 'Number of tokens consumed by the model in this action. Always include this so the card tracks total token usage.' },
       },
-      required: ['card_id', 'agent', 'action'],
+      required: ['card_id', 'agent', 'action', 'detail'],
     },
   },
   {
@@ -157,6 +162,43 @@ export const MCP_TOOLS = [
         suggested_fix: { type: 'string' },
       },
       required: ['card_id', 'root_cause'],
+    },
+  },
+  {
+    name: 'set_current_card',
+    description: 'Set the active card being worked on. Writes the card ID to .agents/.current-card in the repo so git hooks can auto-advance the card on commit and push. Call this when you start working on a card.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        card_id: { type: 'string', description: 'The card ID to set as active' },
+        repo_id: { type: 'string', description: 'The repo ID — used to resolve the repo path' },
+      },
+      required: ['card_id', 'repo_id'],
+    },
+  },
+  {
+    name: 'get_next_card',
+    description: 'Get the next unstarted or in-progress card for a repo. Optionally filter by agent type. Use this at the start of a session to find what to work on.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        repo_id: { type: 'string', description: 'The repo ID to query' },
+        assigned_agent: { type: 'string', enum: ['pm', 'frontend_dev', 'backend_dev', 'tester', 'pr_reviewer', 'ux_designer'], description: 'Filter by agent type' },
+      },
+      required: ['repo_id'],
+    },
+  },
+  {
+    name: 'update_card',
+    description: 'Update card metadata — set the PR URL after creating a pull request, or update the estimated complexity.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        card_id: { type: 'string' },
+        pr_url: { type: 'string', description: 'The GitHub/GitLab PR URL after the PR is created' },
+        estimated_complexity: { type: 'string', enum: ['small', 'medium', 'large'] },
+      },
+      required: ['card_id'],
     },
   },
 ] as const;

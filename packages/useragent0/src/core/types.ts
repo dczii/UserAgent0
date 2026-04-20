@@ -64,6 +64,11 @@ export interface CardLogEntry {
   agent: AgentId | 'human';
   action: string;
   detail?: string;
+  files_changed?: string[];
+  commands_run?: string[];
+  outcome?: string;
+  next_step?: string;
+  tokens?: number;
   timestamp: string;
 }
 
@@ -81,6 +86,7 @@ export interface Card {
   pr_url: string | null;
   estimated_complexity: 'small' | 'medium' | 'large' | null;
   bounce_count: number;
+  tokens_used: number;
   created_at: string;
   updated_at: string;
 }

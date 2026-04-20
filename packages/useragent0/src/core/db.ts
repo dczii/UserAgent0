@@ -50,6 +50,7 @@ const SCHEMA = `
     pr_url TEXT DEFAULT NULL,
     estimated_complexity TEXT DEFAULT NULL,
     bounce_count INTEGER NOT NULL DEFAULT 0,
+    tokens_used INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
     FOREIGN KEY (repo_id) REFERENCES repos(id)
@@ -74,6 +75,8 @@ export class DBClient {
 
   private migrate(): void {
     this.db.exec(SCHEMA);
+    // Add tokens_used column to existing databases that predate it
+    try { this.db.exec('ALTER TABLE cards ADD COLUMN tokens_used INTEGER NOT NULL DEFAULT 0'); } catch {}
   }
 
   close(): void {
@@ -153,6 +156,7 @@ export class DBClient {
       pr_url: null,
       estimated_complexity: input.estimated_complexity ?? null,
       bounce_count: 0,
+      tokens_used: 0,
       created_at: now,
       updated_at: now,
     };
@@ -161,14 +165,14 @@ export class DBClient {
       INSERT INTO cards (
         id, repo_id, title, description, acceptance_criteria,
         assigned_agent, file_scope, column, agent_log, annotations,
-        pr_url, estimated_complexity, bounce_count, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        pr_url, estimated_complexity, bounce_count, tokens_used, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       card.id, card.repo_id, card.title, card.description,
       JSON.stringify(card.acceptance_criteria), card.assigned_agent,
       JSON.stringify(card.file_scope), card.column,
       JSON.stringify(card.agent_log), null, null,
-      card.estimated_complexity, 0, card.created_at, card.updated_at,
+      card.estimated_complexity, 0, 0, card.created_at, card.updated_at,
     );
 
     return card;
@@ -221,12 +225,26 @@ export class DBClient {
     const now = new Date().toISOString();
     const logEntry: CardLogEntry = { ...entry, timestamp: now };
     const updatedLog = [...card.agent_log, logEntry];
+    const addedTokens = entry.tokens ?? 0;
 
     this.db.prepare(`
-      UPDATE cards SET agent_log = ?, updated_at = ? WHERE id = ?
-    `).run(JSON.stringify(updatedLog), now, cardId);
+      UPDATE cards SET agent_log = ?, tokens_used = tokens_used + ?, updated_at = ? WHERE id = ?
+    `).run(JSON.stringify(updatedLog), addedTokens, now, cardId);
 
     return this.getCard(cardId);
+  }
+
+  getNextCard(repoId: string, assignedAgent?: AgentId): Card | null {
+    const row = assignedAgent
+      ? this.db.prepare(
+          `SELECT * FROM cards WHERE repo_id = ? AND assigned_agent = ?
+           AND column IN ('pm_creates','in_progress') ORDER BY created_at ASC LIMIT 1`
+        ).get(repoId, assignedAgent) as CardRow | undefined
+      : this.db.prepare(
+          `SELECT * FROM cards WHERE repo_id = ?
+           AND column IN ('pm_creates','in_progress') ORDER BY created_at ASC LIMIT 1`
+        ).get(repoId) as CardRow | undefined;
+    return row ? deserializeCard(row) : null;
   }
 
   setAnnotations(cardId: string, annotations: CardAnnotation): Card | null {
@@ -237,13 +255,14 @@ export class DBClient {
     return this.getCard(cardId);
   }
 
-  updateCard(cardId: string, updates: Partial<Pick<Card, 'pr_url' | 'estimated_complexity'>>): Card | null {
+  updateCard(cardId: string, updates: Partial<Pick<Card, 'pr_url' | 'estimated_complexity' | 'tokens_used'>>): Card | null {
     const now = new Date().toISOString();
     const parts: string[] = [];
     const values: unknown[] = [];
 
     if (updates.pr_url !== undefined) { parts.push('pr_url = ?'); values.push(updates.pr_url); }
     if (updates.estimated_complexity !== undefined) { parts.push('estimated_complexity = ?'); values.push(updates.estimated_complexity); }
+    if (updates.tokens_used !== undefined) { parts.push('tokens_used = tokens_used + ?'); values.push(updates.tokens_used); }
 
     if (parts.length === 0) return this.getCard(cardId);
 
@@ -285,6 +304,7 @@ interface CardRow {
   pr_url: string | null;
   estimated_complexity: string | null;
   bounce_count: number;
+  tokens_used: number;
   created_at: string;
   updated_at: string;
 }
