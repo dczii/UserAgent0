@@ -10,6 +10,8 @@ npm install -g useragent0
 
 That's it. No database to install. No server to configure. Everything is bundled.
 
+> ⚠️ **After installing, add useragent0 to your IDE's MCP config** (see Step 3 below) — without this your IDE's AI cannot create or manage task cards.
+
 ## Quick Start
 
 **Step 1 — Start the monitoring server**

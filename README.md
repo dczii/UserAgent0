@@ -17,10 +17,31 @@ useragent0 start
 # 2. Add to any repo
 cd your-project
 useragent0 init
-
-# 3. Add to your IDE MCP config
-# { "mcpServers": { "useragent0": { "url": "http://localhost:4000/mcp" } } }
 ```
+
+## ⚠️ Important: Add useragent0 to your IDE's MCP config
+
+After installing, you **must** connect your IDE to the useragent0 MCP server so your AI can create and manage task cards.
+
+Add the following to your IDE's MCP config file:
+
+```json
+{
+  "mcpServers": {
+    "useragent0": {
+      "url": "http://localhost:4000/mcp"
+    }
+  }
+}
+```
+
+| IDE | MCP Config Location |
+|-----|-------------------|
+| Cursor | `.cursor/mcp.json` in your repo, or `~/.cursor/mcp.json` globally |
+| Claude Code | `claude_mcp_config.json` in your repo |
+| Windsurf | `.codeium/windsurf/mcp_config.json` |
+
+> Make sure `useragent0 start` is running before your IDE connects.
 
 ## Monorepo Structure
 
