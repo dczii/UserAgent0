@@ -3,6 +3,7 @@ import cors from 'cors';
 import { WebSocketServer, WebSocket } from 'ws';
 import http from 'http';
 import path from 'path';
+import fs from 'fs';
 import { DBClient, DB_PATH } from './core';
 import { MCP_TOOLS } from './core';
 import type { KanbanColumn, AgentId, CardAnnotation } from './core';
@@ -239,6 +240,18 @@ async function handleMCPTool(name: string, input: Record<string, unknown>) {
       throw new Error(`Unknown tool: ${name}`);
   }
 }
+
+// ─── Serve UI ─────────────────────────────────────────────────────────────────
+
+const UI_PATH = path.join(__dirname, '..', 'src', 'ui', 'index.html');
+
+app.get('/', (_req, res) => {
+  if (fs.existsSync(UI_PATH)) {
+    res.sendFile(UI_PATH);
+  } else {
+    res.send('<h2>agents-kit server running</h2><p>UI not found. Check installation.</p>');
+  }
+});
 
 // ─── Health ───────────────────────────────────────────────────────────────────
 

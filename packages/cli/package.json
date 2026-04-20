@@ -1,5 +1,5 @@
 {
-  "name": "agents-kit",
+  "name": "@agents-kit/cli",
   "version": "1.0.0",
   "description": "AI developer agents for any repository — local-first, MCP-powered",
   "bin": {

@@ -8,6 +8,7 @@
   "main": "dist/cli.js",
   "files": [
     "dist/",
+    "src/ui/",
     "README.md"
   ],
   "scripts": {
