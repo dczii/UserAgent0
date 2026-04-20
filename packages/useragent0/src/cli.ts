@@ -213,13 +213,9 @@ program
 
     // 2. MCP endpoint
     try {
-      const res = await fetch(`${base}/mcp`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list', params: {} }),
-      });
-      const json = await res.json() as { result?: { tools?: { name: string }[] }; error?: unknown };
-      const tools: { name: string }[] = json?.result?.tools ?? [];
+      const res = await fetch(`${base}/mcp`);
+      const json = await res.json() as { tools?: { name: string }[] };
+      const tools: { name: string }[] = json?.tools ?? [];
       if (tools.length > 0) {
         console.log(green('  ✓') + `  MCP endpoint responding — ${bold(String(tools.length))} tools available`);
         tools.forEach(t => console.log(dim(`       • ${t.name}`)));
