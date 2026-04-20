@@ -27,6 +27,10 @@ function broadcast(event: { type: string; payload: unknown }) {
   });
 }
 
+function broadcastFeed(cardId: string, agent: AgentId | string, message: string) {
+  broadcast({ type: 'agent:live_feed', payload: { card_id: cardId, agent, message } });
+}
+
 wss.on('connection', (ws) => {
   ws.send(JSON.stringify({ type: 'connected', payload: { message: 'useragent0 server connected' } }));
 });
@@ -192,7 +196,10 @@ async function handleMCPTool(name: string, input: Record<string, unknown>) {
           estimated_complexity: c.estimated_complexity ?? null,
         })
       );
-      created.forEach(card => broadcast({ type: 'card:created', payload: card }));
+      created.forEach(card => {
+        broadcast({ type: 'card:created', payload: card });
+        broadcastFeed(card.id, 'pm', `Card created: "${card.title}" → assigned to ${card.assigned_agent}`);
+      });
       return { created: created.length, cards: created };
     }
 
@@ -201,6 +208,7 @@ async function handleMCPTool(name: string, input: Record<string, unknown>) {
       const card = db.moveCard(card_id, column, (moved_by as AgentId) ?? 'human');
       if (!card) throw new Error(`Card ${card_id} not found`);
       broadcast({ type: 'card:column_changed', payload: card });
+      broadcastFeed(card_id, (moved_by as AgentId) ?? 'human', `"${card.title}" moved → ${column.replace('_', ' ')}`);
       return card;
     }
 
@@ -215,6 +223,13 @@ async function handleMCPTool(name: string, input: Record<string, unknown>) {
       });
       if (!card) throw new Error(`Card ${card_id} not found`);
       broadcast({ type: 'card:log_appended', payload: card });
+      const feedMsg = [
+        `[${agent}] ${action}`,
+        outcome ? `→ ${outcome}` : '',
+        files_changed?.length ? `📄 ${files_changed.join(', ')}` : '',
+        tokens ? `🪙 ${tokens} tokens` : '',
+      ].filter(Boolean).join('  ');
+      broadcastFeed(card_id, agent as AgentId, feedMsg);
       return card;
     }
 
@@ -239,6 +254,7 @@ async function handleMCPTool(name: string, input: Record<string, unknown>) {
       if (!card) throw new Error(`Card ${card_id} not found`);
       card = db.moveCard(card_id, 'in_progress', 'tester') ?? card;
       broadcast({ type: 'card:bounced', payload: card });
+      broadcastFeed(card_id, 'tester', `"${card.title}" bounced back ↩  Root cause: ${root_cause}`);
       return card;
     }
 
@@ -251,6 +267,7 @@ async function handleMCPTool(name: string, input: Record<string, unknown>) {
       const agentsDir = path.join(repo.path, '.agents');
       if (!fs.existsSync(agentsDir)) fs.mkdirSync(agentsDir, { recursive: true });
       fs.writeFileSync(path.join(agentsDir, '.current-card'), card_id, 'utf-8');
+      broadcastFeed(card_id, 'human', `Active card set: "${card.title}"`);
       return { ok: true, card_id, repo_path: repo.path };
     }
 
