@@ -317,6 +317,60 @@ program
     }
   });
 
+// ─── useragent0 db-clear ──────────────────────────────────────────────────────
+
+program
+  .command('db-clear')
+  .description('Delete ALL data from the database (repos, cards, logs)')
+  .action(async () => {
+    printBanner();
+    const { default: inquirer } = await import('inquirer');
+
+    console.log(red('  WARNING: This will permanently delete ALL repos, cards, and logs.'));
+    console.log();
+
+    const { confirmed } = await inquirer.prompt([
+      {
+        type: 'confirm',
+        name: 'confirmed',
+        message: 'Are you sure you want to delete everything?',
+        default: false,
+      },
+    ]);
+
+    if (!confirmed) {
+      console.log(dim('\n  Cancelled. Nothing was deleted.\n'));
+      return;
+    }
+
+    const { final } = await inquirer.prompt([
+      {
+        type: 'input',
+        name: 'final',
+        message: 'Type DELETE to confirm — this cannot be undone:',
+      },
+    ]);
+
+    if (final.trim() !== 'DELETE') {
+      console.log(dim('\n  Cancelled. Nothing was deleted.\n'));
+      return;
+    }
+
+    try {
+      const { DBClient, DB_PATH } = await import('./core');
+      const db = new DBClient(DB_PATH);
+      db.clearAll();
+      db.close();
+      console.log();
+      console.log(green('  ✓') + '  All data deleted.');
+      console.log();
+    } catch (err) {
+      console.error(red('  ✗  Failed to clear database'));
+      console.error(err);
+      process.exit(1);
+    }
+  });
+
 // ─── Git Hooks ────────────────────────────────────────────────────────────────
 
 function installGitHooks(repoPath: string) {

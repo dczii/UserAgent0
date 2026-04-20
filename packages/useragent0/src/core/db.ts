@@ -80,6 +80,10 @@ export class DBClient {
     this.db.close();
   }
 
+  clearAll(): void {
+    this.db.exec('DELETE FROM cards; DELETE FROM repos;');
+  }
+
   // ─── Repos ──────────────────────────────────────────────────────────────────
 
   registerRepo(name: string, repoPath: string, platform: 'github' | 'gitlab' = 'github'): Repo {
