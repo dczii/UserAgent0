@@ -31,7 +31,7 @@ export function writeGlobalConfig(config: Partial<GlobalConfig>): void {
 
 export function setConfigKey(key: string, value: string): void {
   const config = readGlobalConfig();
-  (config as Record<string, unknown>)[key] = value;
+  (config as unknown as Record<string, unknown>)[key] = value;
   writeGlobalConfig(config);
 }
 
