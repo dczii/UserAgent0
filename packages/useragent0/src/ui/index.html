@@ -1,1039 +1,664 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>useragent0</title>
-    <style>
-      *,
-      *::before,
-      *::after {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-      }
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>useragent0</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-      :root {
-        --navy: #0d1b2a;
-        --navy-mid: #1a2f45;
-        --navy-light: #243b55;
-        --teal: #00c9a7;
-        --teal-dim: #00c9a722;
-        --accent: #ffd166;
-        --pink: #f06595;
-        --green: #22c55e;
-        --purple: #7c3aed;
-        --red: #ef4444;
-        --slate: #8fa8c0;
-        --text: #e2e8f0;
-        --border: #243b55;
-      }
+    :root {
+      --navy:       #0B1624;
+      --navy-mid:   #1A2F45;
+      --navy-deep:  #071520;
+      --border:     #1E3A52;
+      --teal:       #00C9A7;
+      --red:        #EF4444;
+      --slate:      #94A3B8;
+      --text:       #E2E8F0;
+    }
 
-      body {
-        background: var(--navy);
-        color: var(--text);
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        height: 100vh;
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-      }
+    body {
+      background: var(--navy);
+      color: var(--text);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background-image: radial-gradient(circle at 1px 1px, #1A2F45 1px, transparent 0);
+      background-size: 28px 28px;
+    }
 
-      /* ── Header ── */
-      header {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 10px 16px;
-        border-bottom: 1px solid var(--border);
-        background: var(--navy);
-        flex-shrink: 0;
-      }
-      .logo {
-        font-weight: 700;
-        font-size: 16px;
-        color: var(--teal);
-        letter-spacing: -0.3px;
-      }
-      .divider {
-        width: 1px;
-        height: 16px;
-        background: var(--border);
-      }
-      .repo-select {
-        background: var(--navy-mid);
-        color: var(--text);
-        border: 1px solid var(--border);
-        border-radius: 6px;
-        padding: 4px 8px;
-        font-size: 13px;
-        outline: none;
-        cursor: pointer;
-      }
-      .connection-dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: var(--red);
-        transition: background 0.3s;
-        margin-left: auto;
-      }
-      .connection-dot.connected {
-        background: var(--teal);
-      }
-      .connection-label {
-        font-size: 11px;
-        color: var(--slate);
-      }
+    /* ── Animations ─────────────────────────────────────────────────────────── */
 
-      .new-card-btn {
-        margin-left: 8px;
-        background: var(--teal);
-        color: var(--navy);
-        border: none;
-        border-radius: 6px;
-        padding: 5px 12px;
-        font-size: 12px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: opacity 0.15s;
-      }
-      .new-card-btn:hover {
-        opacity: 0.85;
-      }
+    @keyframes ping {
+      75%, 100% { transform: scale(2.2); opacity: 0; }
+    }
+    @keyframes slideIn {
+      from { transform: translateX(14px); opacity: 0; }
+      to   { transform: translateX(0);    opacity: 1; }
+    }
+    @keyframes cardGlow {
+      0%   { box-shadow: 0 0 0 3px rgba(0,201,167,.7), 0 8px 32px rgba(0,201,167,.3); transform: scale(1.025); }
+      60%  { box-shadow: 0 0 0 2px rgba(0,201,167,.25), 0 4px 16px rgba(0,201,167,.1); transform: scale(1); }
+      100% { box-shadow: 0 2px 12px rgba(0,0,0,.35); transform: scale(1); }
+    }
 
-      /* ── Layout ── */
-      .main-layout {
-        display: flex;
-        flex: 1;
-        overflow: hidden;
-      }
+    .feed-slide-in  { animation: slideIn  .35s cubic-bezier(.16,1,.3,1) both; }
+    .card-highlight { animation: cardGlow 1.0s ease-out both; }
 
-      /* ── Board ── */
-      .board {
-        flex: 1;
-        overflow-x: auto;
-        padding: 16px;
-      }
-      .columns {
-        display: flex;
-        gap: 10px;
-        height: 100%;
-        min-width: max-content;
-      }
+    /* ── Header ─────────────────────────────────────────────────────────────── */
 
-      /* ── Column ── */
-      .column {
-        width: 210px;
-        flex-shrink: 0;
-        display: flex;
-        flex-direction: column;
-      }
-      .col-header {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        margin-bottom: 10px;
-        padding: 0 2px;
-      }
-      .col-dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        flex-shrink: 0;
-      }
-      .col-name {
-        font-size: 11px;
-        font-weight: 600;
-        color: var(--slate);
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
-      }
-      .col-count {
-        font-size: 11px;
-        color: var(--slate);
-        margin-left: auto;
-      }
-      .col-gate {
-        font-size: 11px;
-      }
+    header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 16px;
+      background: linear-gradient(180deg, #0D1B2A 0%, #0A1825 100%);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
 
-      .col-cards {
-        flex: 1;
-        overflow-y: auto;
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        padding-right: 2px;
-      }
+    .logo-chip {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 10px;
+      height: 32px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #061218 0%, #0C2030 100%);
+      border: 1px solid rgba(0,201,167,.35);
+      box-shadow: 0 0 0 1px rgba(0,201,167,.07), 0 0 18px rgba(0,201,167,.16), inset 0 1px 0 rgba(0,201,167,.14);
+      font-family: 'Courier New', monospace;
+      font-weight: 700;
+      font-size: 14px;
+      letter-spacing: .08em;
+      overflow: hidden;
+      flex-shrink: 0;
+      user-select: none;
+    }
+    .logo-scanlines {
+      position: absolute; inset: 0; pointer-events: none;
+      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,201,167,.04) 2px, rgba(0,201,167,.04) 4px);
+    }
+    .logo-corner { position: absolute; width: 6px; height: 6px; pointer-events: none; }
+    .logo-corner-tl { top: 3px; left: 3px; border-top: 1px solid rgba(0,201,167,.5); border-left: 1px solid rgba(0,201,167,.5); }
+    .logo-corner-br { bottom: 3px; right: 3px; border-bottom: 1px solid rgba(0,201,167,.5); border-right: 1px solid rgba(0,201,167,.5); }
+    .logo-u    { position: relative; color: #e2e8f0; }
+    .logo-zero { position: relative; color: #00c9a7; text-shadow: 0 0 8px rgba(0,201,167,.85), 0 0 22px rgba(0,201,167,.4); }
 
-      /* ── Card ── */
-      .card {
-        background: var(--navy-mid);
-        border-radius: 8px;
-        padding: 10px 12px;
-        cursor: pointer;
-        transition:
-          background 0.15s,
-          transform 0.1s;
-        border: 1px solid var(--border);
-        border-left: 3px solid transparent;
-      }
-      .card:hover {
-        background: var(--navy-light);
-        transform: translateY(-1px);
-      }
-      .card-title {
-        font-size: 12px;
-        font-weight: 500;
-        color: var(--text);
-        line-height: 1.4;
-        margin-bottom: 8px;
-      }
-      .card-tags {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 4px;
-      }
-      .tag {
-        font-size: 10px;
-        font-weight: 600;
-        padding: 2px 6px;
-        border-radius: 4px;
-      }
-      .bounce-badge {
-        font-size: 10px;
-        font-weight: 600;
-        color: var(--red);
-      }
+    .logo-text { font-size: 14px; font-weight: 600; color: var(--teal); letter-spacing: -.3px; }
+    .hdr-divider { width: 1px; height: 16px; background: var(--border); opacity: .55; }
 
-      /* ── Sidebar ── */
-      .sidebar {
-        width: 260px;
-        flex-shrink: 0;
-        border-left: 1px solid var(--border);
-        background: var(--navy-mid);
-        display: flex;
-        flex-direction: column;
-        padding: 14px;
-        gap: 12px;
-        overflow: hidden;
-      }
-      .sidebar-title {
-        font-size: 11px;
-        font-weight: 600;
-        color: var(--slate);
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
-      }
-      .feed-list {
-        flex: 1;
-        overflow-y: auto;
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-      }
-      .feed-item {
-        font-size: 11px;
-        color: var(--slate);
-        border-left: 2px solid var(--teal);
-        padding: 4px 8px;
-        line-height: 1.4;
-      }
-      .feed-time {
-        font-size: 10px;
-        color: var(--navy-light);
-        display: block;
-        margin-bottom: 2px;
-      }
-      .feed-empty {
-        font-size: 11px;
-        color: var(--navy-light);
-        font-style: italic;
-      }
+    .repo-select {
+      background: #142236; color: var(--text); border: 1px solid var(--border);
+      border-radius: 8px; padding: 5px 10px; font-size: 13px; font-family: inherit;
+      outline: none; cursor: pointer; transition: border-color .15s;
+    }
+    .repo-select:hover { border-color: rgba(0,201,167,.35); }
 
-      .mcp-hint {
-        background: var(--navy-light);
-        border-radius: 8px;
-        padding: 10px 12px;
-      }
-      .mcp-hint-title {
-        font-size: 11px;
-        font-weight: 600;
-        color: var(--teal);
-        margin-bottom: 6px;
-      }
-      .mcp-hint-code {
-        font-size: 10px;
-        font-family: "Courier New", monospace;
-        color: var(--slate);
-        line-height: 1.5;
-        word-break: break-all;
-      }
+    .new-card-btn {
+      background: var(--teal); color: #0B1624; border: none; border-radius: 8px;
+      padding: 5px 12px; font-size: 12px; font-weight: 600; font-family: inherit;
+      cursor: pointer; transition: opacity .15s, transform .1s;
+      box-shadow: 0 2px 10px rgba(0,201,167,.28);
+    }
+    .new-card-btn:hover { opacity: .88; transform: translateY(-1px); }
+    .new-card-btn:active { transform: translateY(0); }
 
-      /* ── Detail Panel ── */
-      .detail-overlay {
-        display: none;
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.65);
-        z-index: 100;
-      }
-      .detail-overlay.open {
-        display: block;
-      }
-      .detail-panel {
-        position: absolute;
-        right: 0;
-        top: 0;
-        bottom: 0;
-        width: 460px;
-        background: var(--navy-mid);
-        overflow-y: auto;
-        padding: 20px;
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-      }
-      .detail-header {
-        display: flex;
-        align-items: flex-start;
-        gap: 12px;
-      }
-      .detail-col-label {
-        font-size: 11px;
-        font-weight: 600;
-        margin-bottom: 4px;
-      }
-      .detail-title {
-        font-size: 16px;
-        font-weight: 700;
-        color: white;
-        line-height: 1.35;
-        flex: 1;
-      }
-      .detail-close {
-        font-size: 20px;
-        color: var(--slate);
-        cursor: pointer;
-        line-height: 1;
-        background: none;
-        border: none;
-        padding: 2px;
-      }
-      .detail-close:hover {
-        color: white;
-      }
+    .conn-wrapper { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+    .conn-dot-wrap { position: relative; width: 10px; height: 10px; display: flex; align-items: center; justify-content: center; }
+    .conn-ring { position: absolute; inset: 0; border-radius: 50%; background: var(--teal); animation: ping 1.5s cubic-bezier(0,0,.2,1) infinite; opacity: 0; }
+    .conn-ring.active { opacity: .5; }
+    .conn-dot { position: relative; width: 8px; height: 8px; border-radius: 50%; background: var(--red); transition: background .3s; }
+    .conn-dot.connected { background: var(--teal); }
+    .conn-label { font-size: 11px; font-weight: 600; color: var(--slate); transition: color .3s; }
+    .conn-label.live { color: var(--teal); }
 
-      .detail-section-title {
-        font-size: 11px;
-        font-weight: 600;
-        color: var(--slate);
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
-        margin-bottom: 8px;
-      }
-      .detail-desc {
-        font-size: 13px;
-        color: var(--slate);
-        line-height: 1.6;
-      }
-      .criteria-list {
-        list-style: none;
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-      }
-      .criteria-item {
-        display: flex;
-        gap: 8px;
-        font-size: 13px;
-        color: var(--slate);
-      }
-      .criteria-check {
-        color: var(--teal);
-        flex-shrink: 0;
-      }
+    /* ── Layout ─────────────────────────────────────────────────────────────── */
 
-      .annotation-box {
-        background: #ef444411;
-        border: 1px solid #ef444433;
-        border-radius: 8px;
-        padding: 12px;
-      }
-      .annotation-title {
-        font-size: 11px;
-        font-weight: 600;
-        color: var(--red);
-        margin-bottom: 8px;
-      }
-      .annotation-text {
-        font-size: 12px;
-        color: var(--slate);
-        line-height: 1.5;
-      }
+    .main-layout { display: flex; flex: 1; overflow: hidden; }
 
-      .file-chips {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 4px;
-      }
-      .file-chip {
-        font-size: 11px;
-        font-family: monospace;
-        background: var(--navy);
-        padding: 3px 8px;
-        border-radius: 4px;
-        color: var(--slate);
-      }
+    /* ── Board ──────────────────────────────────────────────────────────────── */
 
-      .move-btn {
-        width: 100%;
-        padding: 10px;
-        border-radius: 8px;
-        border: none;
-        font-size: 13px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: opacity 0.15s;
-        color: var(--navy);
-      }
-      .move-btn:hover {
-        opacity: 0.85;
-      }
+    .board { flex: 1; overflow-x: auto; padding: 16px; }
+    .columns { display: flex; gap: 10px; height: 100%; min-width: max-content; }
 
-      .log-list {
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-        max-height: 240px;
-        overflow-y: auto;
-      }
-      .log-item {
-        font-size: 11px;
-        border-left: 2px solid var(--navy-light);
-        padding: 4px 8px;
-      }
-      .log-agent {
-        font-weight: 600;
-        color: var(--teal);
-      }
-      .log-action {
-        color: var(--slate);
-      }
-      .log-time {
-        color: var(--navy-light);
-        float: right;
-      }
-      .log-detail {
-        color: var(--slate);
-        margin-top: 2px;
-      }
+    /* ── Column ─────────────────────────────────────────────────────────────── */
 
-      /* ── New Card Modal ── */
-      .modal-overlay {
-        display: none;
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.7);
-        z-index: 200;
-        align-items: center;
-        justify-content: center;
-      }
-      .modal-overlay.open {
-        display: flex;
-      }
-      .modal {
-        background: var(--navy-mid);
-        border-radius: 12px;
-        padding: 24px;
-        width: 480px;
-        border: 1px solid var(--border);
-        display: flex;
-        flex-direction: column;
-        gap: 14px;
-      }
-      .modal-title {
-        font-size: 16px;
-        font-weight: 700;
-        color: white;
-      }
-      .modal label {
-        font-size: 12px;
-        font-weight: 600;
-        color: var(--slate);
-        display: block;
-        margin-bottom: 5px;
-      }
-      .modal input,
-      .modal textarea,
-      .modal select {
-        width: 100%;
-        background: var(--navy);
-        border: 1px solid var(--border);
-        border-radius: 6px;
-        color: var(--text);
-        padding: 8px 10px;
-        font-size: 13px;
-        outline: none;
-        font-family: inherit;
-      }
-      .modal input:focus,
-      .modal textarea:focus,
-      .modal select:focus {
-        border-color: var(--teal);
-      }
-      .modal textarea {
-        resize: vertical;
-        min-height: 70px;
-      }
-      .modal-actions {
-        display: flex;
-        gap: 8px;
-        justify-content: flex-end;
-      }
-      .btn-cancel {
-        background: transparent;
-        border: 1px solid var(--border);
-        color: var(--slate);
-        border-radius: 6px;
-        padding: 8px 16px;
-        font-size: 13px;
-        cursor: pointer;
-      }
-      .btn-cancel:hover {
-        border-color: var(--slate);
-      }
-      .btn-create {
-        background: var(--teal);
-        border: none;
-        color: var(--navy);
-        border-radius: 6px;
-        padding: 8px 16px;
-        font-size: 13px;
-        font-weight: 600;
-        cursor: pointer;
-      }
-      .btn-create:hover {
-        opacity: 0.85;
-      }
-      .btn-create:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-      }
+    .column { width: 220px; flex-shrink: 0; display: flex; flex-direction: column; }
+    .col-header { margin-bottom: 10px; padding: 0 2px; }
+    .col-topbar { height: 2px; border-radius: 2px; margin-bottom: 8px; opacity: .6; }
+    .col-meta { display: flex; align-items: center; gap: 6px; }
+    .col-name { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .col-gate { font-size: 9px; font-weight: 700; padding: 2px 5px; border-radius: 20px; background: rgba(255,209,102,.07); color: #FFD166; border: 1px solid rgba(255,209,102,.18); text-transform: uppercase; letter-spacing: .05em; flex-shrink: 0; }
+    .col-count { margin-left: auto; font-size: 11px; font-weight: 600; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #1A2F45; color: var(--slate); border: 1px solid var(--border); flex-shrink: 0; }
+    .col-cards { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding: 0 2px 2px; }
 
-      .empty-state {
-        font-size: 11px;
-        color: var(--navy-light);
-        text-align: center;
-        padding: 20px 8px;
-        font-style: italic;
-      }
+    /* ── Card ───────────────────────────────────────────────────────────────── */
 
-      ::-webkit-scrollbar {
-        width: 4px;
-        height: 4px;
-      }
-      ::-webkit-scrollbar-track {
-        background: transparent;
-      }
-      ::-webkit-scrollbar-thumb {
-        background: var(--border);
-        border-radius: 2px;
-      }
-    </style>
-  </head>
-  <body>
-    <!-- Header -->
-    <header>
-      <span class="logo">useragent0</span>
-      <div class="divider"></div>
-      <select class="repo-select" id="repoSelect" onchange="selectRepo(this.value)">
-        <option value="">Loading repos…</option>
-      </select>
-      <button class="new-card-btn" onclick="openNewCardModal()">+ New Card</button>
-      <div class="connection-dot" id="connDot"></div>
-      <span class="connection-label" id="connLabel">Connecting…</span>
-    </header>
+    .card {
+      border-radius: 12px; padding: 12px 14px; cursor: pointer;
+      border: 1px solid #1E3A52; border-left: 3px solid transparent;
+      background: linear-gradient(135deg, #1A2F45 0%, #142236 100%);
+      box-shadow: 0 2px 12px rgba(0,0,0,.35);
+      transition: transform .15s ease, box-shadow .15s ease;
+      position: relative; overflow: hidden;
+    }
+    .card:hover { transform: translateY(-2px); box-shadow: 0 4px 20px rgba(0,0,0,.4); }
+    .card-corner-glow {
+      position: absolute; top: 0; right: 0; width: 48px; height: 48px;
+      border-radius: 50%; opacity: 0; pointer-events: none;
+      transition: opacity .3s; transform: translate(25%, -25%);
+    }
+    .card:hover .card-corner-glow { opacity: 1; }
+    .card-title { font-size: 12px; font-weight: 500; color: var(--text); line-height: 1.45; margin-bottom: 10px; position: relative; }
+    .card:hover .card-title { color: white; }
+    .card-tags { display: flex; flex-wrap: wrap; gap: 5px; position: relative; }
+    .tag { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 20px; border: 1px solid transparent; }
 
-    <!-- Main -->
-    <div class="main-layout">
-      <!-- Board -->
-      <div class="board">
-        <div class="columns" id="columns"></div>
+    .empty-col { border-radius: 12px; border: 1px dashed var(--border); height: 56px; display: flex; align-items: center; justify-content: center; }
+    .empty-col-text { font-size: 11px; color: #2D4F6E; }
+
+    /* ── Sidebar ────────────────────────────────────────────────────────────── */
+
+    .sidebar { width: 272px; flex-shrink: 0; border-left: 1px solid var(--border); background: #0A1825; display: flex; flex-direction: column; overflow: hidden; }
+    .sidebar-hdr { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .sidebar-dot { width: 6px; height: 6px; border-radius: 50%; background: #3D5A73; flex-shrink: 0; transition: background .3s; }
+    .sidebar-dot.live { background: var(--teal); }
+    .sidebar-title { font-size: 11px; font-weight: 600; color: var(--slate); text-transform: uppercase; letter-spacing: .06em; }
+    .feed-count { margin-left: auto; font-size: 10px; font-weight: 600; padding: 1px 7px; border-radius: 20px; background: rgba(0,201,167,.07); color: var(--teal); border: 1px solid rgba(0,201,167,.15); }
+
+    .feed-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; }
+    .feed-item { font-size: 11px; color: #CBD5E1; padding: 8px 10px; border-radius: 0 8px 8px 0; background: #142236; border: 1px solid #1A3348; border-left: 2px solid #1E3A52; line-height: 1.45; }
+    .feed-item.newest { background: rgba(0,201,167,.04); border: 1px solid rgba(0,201,167,.14); border-left: 2px solid var(--teal); }
+    .feed-time { font-size: 10px; font-family: 'Courier New', monospace; color: #3D5A73; display: block; margin-bottom: 3px; }
+    .feed-empty { font-size: 11px; color: #2D4F6E; font-style: italic; padding: 4px 0; }
+
+    .mcp-hint { margin: 0 12px 12px; background: #142236; border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; flex-shrink: 0; }
+    .mcp-hint-title { font-size: 11px; font-weight: 600; color: var(--teal); margin-bottom: 6px; }
+    .mcp-hint-code { font-size: 10px; font-family: 'Courier New', monospace; color: var(--slate); line-height: 1.55; word-break: break-all; opacity: .7; }
+
+    /* ── Detail Panel ───────────────────────────────────────────────────────── */
+
+    .detail-overlay {
+      position: fixed; inset: 0; background: rgba(5,13,24,.75);
+      backdrop-filter: blur(3px); z-index: 100;
+      visibility: hidden; opacity: 0;
+      transition: opacity .2s ease, visibility 0s linear .2s;
+    }
+    .detail-overlay.open { visibility: visible; opacity: 1; transition: opacity .2s ease, visibility 0s linear 0s; }
+    .detail-panel {
+      position: absolute; right: 0; top: 0; bottom: 0; width: 480px;
+      background: linear-gradient(180deg, #0F2035 0%, #0D1B2A 100%);
+      border-left: 1px solid var(--border);
+      box-shadow: -12px 0 48px rgba(0,0,0,.5);
+      overflow-y: auto; display: flex; flex-direction: column;
+      transform: translateX(100%);
+      transition: transform .32s cubic-bezier(.16,1,.3,1);
+    }
+    .detail-overlay.open .detail-panel { transform: translateX(0); }
+
+    .detail-top-bar { height: 3px; flex-shrink: 0; }
+    .detail-body { padding: 20px; display: flex; flex-direction: column; gap: 18px; flex: 1; }
+
+    .detail-hdr { display: flex; align-items: flex-start; gap: 12px; }
+    .detail-col-pill { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; padding: 3px 9px; border-radius: 20px; margin-bottom: 8px; display: inline-block; }
+    .detail-title { font-size: 15px; font-weight: 700; color: white; line-height: 1.35; flex: 1; }
+    .detail-close {
+      font-size: 18px; color: var(--slate); cursor: pointer; background: none; border: none;
+      width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+      border-radius: 50%; transition: background .15s, color .15s;
+    }
+    .detail-close:hover { color: white; background: rgba(255,255,255,.08); }
+
+    .sec-title { font-size: 10px; font-weight: 700; color: var(--slate); text-transform: uppercase; letter-spacing: .07em; margin-bottom: 10px; }
+    .detail-desc { font-size: 13px; color: #94A3B8; line-height: 1.65; }
+    .divider { height: 1px; background: var(--border); }
+
+    .criteria-list { list-style: none; display: flex; flex-direction: column; gap: 7px; }
+    .criteria-item { display: flex; gap: 8px; font-size: 13px; color: #94A3B8; }
+    .criteria-check { color: var(--teal); flex-shrink: 0; font-size: 12px; margin-top: 1px; }
+
+    .annotation-box { background: rgba(239,68,68,.05); border: 1px solid rgba(239,68,68,.2); border-radius: 12px; padding: 14px; }
+    .annotation-hdr { font-size: 10px; font-weight: 700; color: #F87171; text-transform: uppercase; letter-spacing: .07em; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+    .bounce-pill { font-size: 10px; background: rgba(239,68,68,.15); color: #F87171; border: 1px solid rgba(239,68,68,.25); padding: 1px 6px; border-radius: 20px; }
+    .annotation-text { font-size: 12px; color: #94A3B8; line-height: 1.55; }
+    .failed-test { font-size: 11px; font-family: 'Courier New', monospace; background: rgba(0,0,0,.2); color: #94A3B8; padding: 5px 10px; border-radius: 6px; margin-top: 4px; }
+
+    .file-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+    .file-chip { font-size: 11px; font-family: 'Courier New', monospace; background: #0D1B2A; border: 1px solid var(--border); padding: 3px 8px; border-radius: 6px; color: #94A3B8; }
+
+    .move-btn { width: 100%; padding: 11px; border-radius: 12px; border: none; font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer; color: #0B1624; transition: opacity .15s, transform .1s; }
+    .move-btn:hover { opacity: .88; transform: translateY(-1px); }
+    .move-btn:active { transform: translateY(0); }
+
+    .pr-link { font-size: 13px; font-weight: 500; color: #38BDF8; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; }
+    .pr-link:hover { color: #7DD3FC; }
+
+    .log-list { display: flex; flex-direction: column; gap: 6px; max-height: 260px; overflow-y: auto; padding-right: 2px; }
+    .log-item { font-size: 11px; border-left: 2px solid var(--border); padding: 6px 10px; border-radius: 0 6px 6px 0; }
+    .log-item.log-first { border-left-color: var(--teal); background: rgba(0,201,167,.03); }
+    .log-meta { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; flex-wrap: wrap; }
+    .log-agent { font-weight: 600; color: var(--teal); }
+    .log-action { color: var(--slate); }
+    .log-time { color: #3D5A73; margin-left: auto; font-family: 'Courier New', monospace; font-size: 10px; }
+    .log-detail { color: var(--slate); line-height: 1.45; }
+
+    /* ── Modal ──────────────────────────────────────────────────────────────── */
+
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.72); backdrop-filter: blur(3px);
+      z-index: 200; display: flex; align-items: center; justify-content: center;
+      visibility: hidden; opacity: 0;
+      transition: opacity .2s ease, visibility 0s linear .2s;
+    }
+    .modal-overlay.open { visibility: visible; opacity: 1; transition: opacity .2s ease, visibility 0s linear 0s; }
+    .modal {
+      background: linear-gradient(180deg, #0F2035 0%, #0D1B2A 100%);
+      border-radius: 16px; padding: 24px; width: 480px;
+      border: 1px solid var(--border); box-shadow: 0 24px 64px rgba(0,0,0,.6);
+      display: flex; flex-direction: column; gap: 14px;
+      transform: scale(.96) translateY(8px);
+      transition: transform .25s cubic-bezier(.16,1,.3,1);
+      max-height: 90vh; overflow-y: auto;
+    }
+    .modal-overlay.open .modal { transform: scale(1) translateY(0); }
+    .modal-title { font-size: 15px; font-weight: 700; color: white; }
+    .modal label { font-size: 11px; font-weight: 600; color: var(--slate); text-transform: uppercase; letter-spacing: .05em; display: block; margin-bottom: 5px; }
+    .modal input, .modal textarea, .modal select {
+      width: 100%; background: #0D1B2A; border: 1px solid var(--border);
+      border-radius: 8px; color: var(--text); padding: 8px 10px;
+      font-size: 13px; font-family: inherit; outline: none; transition: border-color .15s;
+    }
+    .modal input:focus, .modal textarea:focus, .modal select:focus { border-color: rgba(0,201,167,.5); }
+    .modal textarea { resize: vertical; min-height: 70px; }
+    .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }
+    .btn-cancel { background: transparent; border: 1px solid var(--border); color: var(--slate); border-radius: 8px; padding: 8px 16px; font-size: 13px; font-family: inherit; cursor: pointer; transition: border-color .15s; }
+    .btn-cancel:hover { border-color: var(--slate); }
+    .btn-create { background: var(--teal); border: none; color: #0B1624; border-radius: 8px; padding: 8px 20px; font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer; transition: opacity .15s; box-shadow: 0 2px 10px rgba(0,201,167,.28); }
+    .btn-create:hover { opacity: .85; }
+    .btn-create:disabled { opacity: .45; cursor: not-allowed; }
+
+    /* ── Scrollbar ──────────────────────────────────────────────────────────── */
+
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #2D4F6E; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo-chip">
+      <div class="logo-scanlines"></div>
+      <div class="logo-corner logo-corner-tl"></div>
+      <div class="logo-corner logo-corner-br"></div>
+      <span class="logo-u">U</span><span class="logo-zero">0</span>
+    </div>
+    <span class="logo-text">useragent0</span>
+    <div class="hdr-divider"></div>
+    <select class="repo-select" id="repoSelect" onchange="selectRepo(this.value)">
+      <option value="">Loading repos…</option>
+    </select>
+    <button class="new-card-btn" onclick="openNewCardModal()">+ New Card</button>
+    <div class="conn-wrapper">
+      <div class="conn-dot-wrap">
+        <span class="conn-ring" id="connRing"></span>
+        <div class="conn-dot" id="connDot"></div>
       </div>
+      <span class="conn-label" id="connLabel">Connecting…</span>
+    </div>
+  </header>
 
-      <!-- Sidebar -->
-      <div class="sidebar">
-        <div class="sidebar-title">Live Feed</div>
-        <div class="feed-list" id="feedList">
-          <div class="feed-empty">Waiting for agent activity…</div>
-        </div>
-        <div class="mcp-hint">
-          <div class="mcp-hint-title">IDE MCP Setup</div>
-          <div class="mcp-hint-code">
-            { "useragent0": {<br />&nbsp;&nbsp;"url": "http://localhost:4000/mcp"<br />} }
-          </div>
-        </div>
+  <div class="main-layout">
+    <div class="board"><div class="columns" id="columns"></div></div>
+
+    <div class="sidebar">
+      <div class="sidebar-hdr">
+        <div class="sidebar-dot" id="sidebarDot"></div>
+        <span class="sidebar-title">Live Feed</span>
+        <span class="feed-count" id="feedCount" style="display:none">0</span>
+      </div>
+      <div class="feed-list" id="feedList">
+        <div class="feed-empty">Waiting for agent activity…</div>
+      </div>
+      <div class="mcp-hint">
+        <div class="mcp-hint-title">IDE MCP Setup</div>
+        <div class="mcp-hint-code">{ "useragent0": {<br />&nbsp;&nbsp;"url": "http://localhost:4000/mcp"<br />} }</div>
       </div>
     </div>
+  </div>
 
-    <!-- Card Detail Overlay -->
-    <div class="detail-overlay" id="detailOverlay" onclick="handleOverlayClick(event)">
-      <div class="detail-panel" id="detailPanel"></div>
-    </div>
+  <div class="detail-overlay" id="detailOverlay" onclick="handleOverlayClick(event)">
+    <div class="detail-panel" id="detailPanel"></div>
+  </div>
 
-    <!-- New Card Modal -->
-    <div class="modal-overlay" id="modalOverlay" onclick="handleModalClick(event)">
-      <div class="modal">
-        <div class="modal-title">New Card</div>
-        <div>
-          <label>Title *</label>
-          <input id="cardTitle" type="text" placeholder="e.g. Add login button to navbar" />
-        </div>
-        <div>
-          <label>Description</label>
-          <textarea id="cardDesc" placeholder="Context, background, links…"></textarea>
-        </div>
-        <div>
-          <label>Acceptance Criteria (one per line)</label>
-          <textarea
-            id="cardCriteria"
-            placeholder="Button appears in navbar&#10;Clicking opens login modal&#10;Modal closes on ESC"
-          ></textarea>
-        </div>
-        <div>
-          <label>Assigned Agent *</label>
-          <select id="cardAgent">
-            <option value="frontend_dev">Frontend Dev</option>
-            <option value="backend_dev">Backend Dev</option>
-          </select>
-        </div>
-        <div>
-          <label>Complexity</label>
-          <select id="cardComplexity">
-            <option value="small">Small</option>
-            <option value="medium" selected>Medium</option>
-            <option value="large">Large</option>
-          </select>
-        </div>
-        <div>
-          <label>File Scope (comma-separated paths or globs)</label>
-          <input
-            id="cardScope"
-            type="text"
-            placeholder="src/components/Navbar.tsx, src/styles/**"
-          />
-        </div>
-        <div class="modal-actions">
-          <button class="btn-cancel" onclick="closeModal()">Cancel</button>
-          <button class="btn-create" id="createBtn" onclick="createCard()">Create Card</button>
-        </div>
+  <div class="modal-overlay" id="modalOverlay" onclick="handleModalClick(event)">
+    <div class="modal">
+      <div class="modal-title">New Card</div>
+      <div><label>Title *</label><input id="cardTitle" type="text" placeholder="e.g. Add login button to navbar" /></div>
+      <div><label>Description</label><textarea id="cardDesc" placeholder="Context, background, links…"></textarea></div>
+      <div><label>Acceptance Criteria (one per line)</label><textarea id="cardCriteria" placeholder="Button appears in navbar&#10;Clicking opens login modal&#10;Modal closes on ESC"></textarea></div>
+      <div>
+        <label>Assigned Agent *</label>
+        <select id="cardAgent">
+          <option value="frontend_dev">Frontend Dev</option>
+          <option value="backend_dev">Backend Dev</option>
+        </select>
+      </div>
+      <div>
+        <label>Complexity</label>
+        <select id="cardComplexity">
+          <option value="small">Small</option>
+          <option value="medium" selected>Medium</option>
+          <option value="large">Large</option>
+        </select>
+      </div>
+      <div><label>File Scope (comma-separated paths or globs)</label><input id="cardScope" type="text" placeholder="src/components/Navbar.tsx, src/styles/**" /></div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+        <button class="btn-create" id="createBtn" onclick="createCard()">Create Card</button>
       </div>
     </div>
+  </div>
 
-    <script>
-      // ── Config ──────────────────────────────────────────────────────────────────
-      const API = ""; // same origin — Express serves this file
-      const WS_URL = `ws://${location.host}`;
+  <script>
+    const API    = '';
+    const WS_URL = `ws://${location.host}`;
+    const CX_COLORS = { small: '#4ADE80', medium: '#FFD166', large: '#EF4444' };
 
-      const COMPLEXITY_COLORS = { small: "#22C55E", medium: "#FFD166", large: "#EF4444" };
+    let repos = [], selectedRepoId = null, columns = [], cards = [], feedItems = [];
+    let feedIdCounter = 0;
+    const highlightedCardIds = new Set();
 
-      // ── State ───────────────────────────────────────────────────────────────────
-      let repos = [];
-      let selectedRepoId = null;
-      let columns = [];
-      let cards = [];
-      let feedItems = [];
+    // ── WebSocket ─────────────────────────────────────────────────────────────
+    let ws;
+    function connectWS() {
+      ws = new WebSocket(WS_URL);
+      ws.onopen  = () => setConnected(true);
+      ws.onclose = () => { setConnected(false); setTimeout(connectWS, 3000); };
+      ws.onerror = () => ws.close();
+      ws.onmessage = (e) => { try { handleWSMessage(JSON.parse(e.data)); } catch {} };
+    }
 
-      // ── WebSocket ────────────────────────────────────────────────────────────────
-      let ws;
-      function connectWS() {
-        ws = new WebSocket(WS_URL);
-        ws.onopen = () => setConnected(true);
-        ws.onclose = () => {
-          setConnected(false);
-          setTimeout(connectWS, 3000);
-        };
-        ws.onerror = () => ws.close();
-        ws.onmessage = (e) => {
-          const msg = JSON.parse(e.data);
-          handleWSMessage(msg);
-        };
-      }
+    function setConnected(v) {
+      document.getElementById('connDot').classList.toggle('connected', v);
+      document.getElementById('connRing').classList.toggle('active', v);
+      const lbl = document.getElementById('connLabel');
+      lbl.textContent = v ? 'Live' : 'Offline';
+      lbl.className = 'conn-label' + (v ? ' live' : '');
+      document.getElementById('sidebarDot').classList.toggle('live', v);
+    }
 
-      function setConnected(v) {
-        document.getElementById("connDot").className = "connection-dot" + (v ? " connected" : "");
-        document.getElementById("connLabel").textContent = v ? "Connected" : "Disconnected";
-      }
-
-      function handleWSMessage(msg) {
-        if (
-          [
-            "card:created",
-            "card:updated",
-            "card:column_changed",
-            "card:log_appended",
-            "card:bounced",
-          ].includes(msg.type)
-        ) {
-          loadCards();
+    function handleWSMessage(msg) {
+      const cardEvents = ['card:created','card:updated','card:column_changed','card:log_appended','card:bounced'];
+      if (cardEvents.includes(msg.type)) {
+        if (msg.type === 'card:column_changed' || msg.type === 'card:created') {
+          const id = msg.payload?.id;
+          if (id) {
+            highlightedCardIds.add(id);
+            setTimeout(() => highlightedCardIds.delete(id), 1200);
+          }
         }
-        if (msg.type === "agent:live_feed") {
-          addFeedItem(msg.payload.message);
-        }
-        if (msg.type === "repo:registered") {
-          loadRepos();
-        }
-        if (msg.type === "columns:updated" && msg.payload.repo_id === selectedRepoId) {
-          columns = msg.payload.columns;
-          renderBoard();
-        }
-      }
-
-      // ── Data Loading ─────────────────────────────────────────────────────────────
-      async function loadRepos() {
-        const res = await fetch(`${API}/api/repos`);
-        repos = await res.json();
-        const sel = document.getElementById("repoSelect");
-        if (!repos.length) {
-          sel.innerHTML = '<option value="">No repos — run: useragent0 init</option>';
-          return;
-        }
-        sel.innerHTML = repos.map((r) => `<option value="${r.id}">${r.name}</option>`).join("");
-        if (!selectedRepoId || !repos.find((r) => r.id === selectedRepoId)) {
-          selectedRepoId = repos[0].id;
-          sel.value = selectedRepoId;
-        }
-        loadColumns();
-      }
-
-      async function loadColumns() {
-        if (!selectedRepoId) return;
-        const res = await fetch(`${API}/api/repos/${selectedRepoId}/columns`);
-        columns = await res.json();
         loadCards();
       }
-
-      async function loadCards() {
-        if (!selectedRepoId) return;
-        const res = await fetch(`${API}/api/repos/${selectedRepoId}/cards`);
-        cards = await res.json();
+      if (msg.type === 'agent:live_feed') addFeedItem(msg.payload.message);
+      if (msg.type === 'repo:registered') loadRepos();
+      if (msg.type === 'columns:updated' && msg.payload.repo_id === selectedRepoId) {
+        columns = msg.payload.columns;
         renderBoard();
       }
+    }
 
-      function selectRepo(id) {
-        selectedRepoId = id;
-        loadColumns();
+    // ── Data ──────────────────────────────────────────────────────────────────
+    async function loadRepos() {
+      const res = await fetch(`${API}/api/repos`);
+      repos = await res.json();
+      const sel = document.getElementById('repoSelect');
+      if (!repos.length) { sel.innerHTML = '<option value="">No repos — run: useragent0 init</option>'; return; }
+      sel.innerHTML = repos.map(r => `<option value="${r.id}">${r.name}</option>`).join('');
+      if (!selectedRepoId || !repos.find(r => r.id === selectedRepoId)) {
+        selectedRepoId = repos[0].id;
+        sel.value = selectedRepoId;
       }
+      loadColumns();
+    }
 
-      // ── Render Board ─────────────────────────────────────────────────────────────
-      function renderBoard() {
-        const container = document.getElementById("columns");
-        if (!columns.length) {
-          container.innerHTML = '<div style="padding:32px;color:var(--slate)">No columns configured. Run useragent0 columns set.</div>';
-          return;
-        }
+    async function loadColumns() {
+      if (!selectedRepoId) return;
+      columns = await (await fetch(`${API}/api/repos/${selectedRepoId}/columns`)).json();
+      loadCards();
+    }
 
-        // Collect orphaned cards (column slug not in current columns)
-        const knownSlugs = new Set(columns.map((c) => c.slug));
-        const orphaned = cards.filter((c) => !knownSlugs.has(c.column));
+    async function loadCards() {
+      if (!selectedRepoId) return;
+      cards = await (await fetch(`${API}/api/repos/${selectedRepoId}/cards`)).json();
+      renderBoard();
+    }
 
-        const allCols = [...columns];
-        if (orphaned.length) {
-          allCols.push({ slug: "__orphaned__", label: "Unknown", color: "#8FA8C0", human_gate: false, position: 999 });
-        }
+    function selectRepo(id) { selectedRepoId = id; loadColumns(); }
 
-        container.innerHTML = allCols.map((col) => {
-          const colCards = col.slug === "__orphaned__"
-            ? orphaned
-            : cards.filter((c) => c.column === col.slug);
-          return `
-        <div class="column">
-          <div class="col-header">
-            <div class="col-dot" style="background:${col.color}"></div>
-            <span class="col-name">${col.label}</span>
-            ${col.human_gate ? '<span class="col-gate" title="Human checkpoint">👤</span>' : ""}
-            <span class="col-count">${colCards.length}</span>
-          </div>
-          <div class="col-cards">
-            ${colCards.length ? colCards.map((c) => renderCard(c, col)).join("") : '<div class="empty-state">No cards</div>'}
+    // ── Board ─────────────────────────────────────────────────────────────────
+    function renderBoard() {
+      const container = document.getElementById('columns');
+      if (!columns.length) {
+        container.innerHTML = '<div style="padding:32px;color:var(--slate)">No columns configured. Run useragent0 columns set.</div>';
+        return;
+      }
+      const knownSlugs = new Set(columns.map(c => c.slug));
+      const orphaned   = cards.filter(c => !knownSlugs.has(c.column));
+      const allCols    = [...columns];
+      if (orphaned.length) allCols.push({ slug: '__orphaned__', label: 'Unknown', color: '#8FA8C0', human_gate: false });
+
+      container.innerHTML = allCols.map(col => {
+        const colCards = col.slug === '__orphaned__' ? orphaned : cards.filter(c => c.column === col.slug);
+        const hasCards = colCards.length > 0;
+        return `
+          <div class="column">
+            <div class="col-header">
+              <div class="col-topbar" style="background:linear-gradient(90deg,${col.color}AA,transparent)"></div>
+              <div class="col-meta">
+                <span class="col-name" style="color:${col.color}">${col.label}</span>
+                ${col.human_gate ? '<span class="col-gate">gate</span>' : ''}
+                <span class="col-count" style="${hasCards ? `background:${col.color}18;color:${col.color};border-color:${col.color}28` : ''}">${colCards.length}</span>
+              </div>
+            </div>
+            <div class="col-cards">
+              ${colCards.length ? colCards.map(c => renderCard(c, col)).join('') : '<div class="empty-col"><span class="empty-col-text">empty</span></div>'}
+            </div>
+          </div>`;
+      }).join('');
+
+      highlightedCardIds.forEach(id => {
+        const el = container.querySelector(`[data-card-id="${id}"]`);
+        if (el) el.classList.add('card-highlight');
+      });
+    }
+
+    function renderCard(card, col) {
+      const agent = card.assigned_agent.replace(/_/g, ' ');
+      const cx    = card.estimated_complexity;
+      const cxC   = cx ? (CX_COLORS[cx] || '#94A3B8') : null;
+      const tok   = card.tokens_used || 0;
+      return `
+        <div class="card" data-card-id="${card.id}" style="border-left-color:${col.color}" onclick="openDetail('${card.id}')">
+          <div class="card-corner-glow" style="background:radial-gradient(circle,${col.color}20,transparent 70%)"></div>
+          <div class="card-title">${escHtml(card.title)}</div>
+          <div class="card-tags">
+            <span class="tag" style="background:#94A3B818;color:#94A3B8;border-color:#94A3B825">${agent}</span>
+            ${cx  ? `<span class="tag" style="background:${cxC}18;color:${cxC};border-color:${cxC}25">${cx}</span>` : ''}
+            ${card.bounce_count > 0 ? `<span class="tag" style="background:#EF444418;color:#EF4444;border-color:#EF444425">↩ ${card.bounce_count}</span>` : ''}
+            ${tok > 0 ? `<span class="tag" style="background:#A78BFA18;color:#A78BFA;border-color:#A78BFA25">${(tok/1000).toFixed(1)}k tok</span>` : ''}
           </div>
         </div>`;
-        }).join("");
-      }
+    }
 
-      function renderCard(card, col) {
-        const agentLabel = card.assigned_agent.replace("_", " ");
-        const complexity = card.estimated_complexity;
-        return `
-      <div class="card" style="border-left-color:${col.color}" onclick="openDetail('${card.id}')">
-        <div class="card-title">${escHtml(card.title)}</div>
-        <div class="card-tags">
-          <span class="tag" style="background:#8FA8C022;color:#8FA8C0">${agentLabel}</span>
-          ${complexity ? `<span class="tag" style="background:${COMPLEXITY_COLORS[complexity]}22;color:${COMPLEXITY_COLORS[complexity]}">${complexity}</span>` : ""}
-          ${card.bounce_count > 0 ? `<span class="bounce-badge">↩ ${card.bounce_count}</span>` : ""}
-          ${card.tokens_used > 0 ? `<span class="tag" style="background:#7C3AED22;color:#a78bfa" title="Total tokens used">🪙 ${card.tokens_used.toLocaleString()}</span>` : ""}
-        </div>
-      </div>
-    `;
-      }
+    // ── Detail Panel ──────────────────────────────────────────────────────────
+    function openDetail(cardId) {
+      const card = cards.find(c => c.id === cardId);
+      if (!card) return;
+      const col    = columns.find(c => c.slug === card.column) ?? { label: card.column, color: '#94A3B8', human_gate: false };
+      const colIdx = columns.findIndex(c => c.slug === card.column);
+      const nextCol = columns[colIdx + 1];
+      const log = [...(card.agent_log || [])].reverse();
 
-      // ── Card Detail ───────────────────────────────────────────────────────────────
-      function openDetail(cardId) {
-        const card = cards.find((c) => c.id === cardId);
-        if (!card) return;
-        const col = columns.find((c) => c.slug === card.column) ?? { label: card.column, color: "#8FA8C0", human_gate: false };
-        const colIdx = columns.findIndex((c) => c.slug === card.column);
-        const nextCol = columns[colIdx + 1];
-
-        const panel = document.getElementById("detailPanel");
-        panel.innerHTML = `
-      <div class="detail-header">
-        <div style="flex:1">
-          <div class="detail-col-label" style="color:${col.color}">${col.label}</div>
-          <div class="detail-title">${escHtml(card.title)}</div>
-        </div>
-        <button class="detail-close" onclick="closeDetail()">×</button>
-      </div>
-
-      ${
-        card.description
-          ? `
-        <div>
-          <div class="detail-section-title">Description</div>
-          <p class="detail-desc">${escHtml(card.description)}</p>
-        </div>
-      `
-          : ""
-      }
-
-      ${
-        card.acceptance_criteria?.length
-          ? `
-        <div>
-          <div class="detail-section-title">Acceptance Criteria</div>
-          <ul class="criteria-list">
-            ${card.acceptance_criteria
-              .map(
-                (c) => `
-              <li class="criteria-item">
-                <span class="criteria-check">✓</span>
-                <span>${escHtml(c)}</span>
-              </li>
-            `,
-              )
-              .join("")}
-          </ul>
-        </div>
-      `
-          : ""
-      }
-
-      ${
-        card.annotations
-          ? `
-        <div class="annotation-box">
-          <div class="annotation-title">↩ Bounced Back</div>
-          <p class="annotation-text"><strong>Root cause:</strong> ${escHtml(card.annotations.root_cause)}</p>
-          ${card.annotations.suggested_fix ? `<p class="annotation-text" style="margin-top:6px"><strong>Fix:</strong> ${escHtml(card.annotations.suggested_fix)}</p>` : ""}
-          ${
-            card.annotations.failed_tests?.length
-              ? `
-            <div style="margin-top:8px;font-size:11px;color:var(--red)">Failed tests:</div>
-            ${card.annotations.failed_tests.map((t) => `<div style="font-size:11px;font-family:monospace;color:var(--slate)">${escHtml(t)}</div>`).join("")}
-          `
-              : ""
-          }
-        </div>
-      `
-          : ""
-      }
-
-      ${
-        card.file_scope?.length
-          ? `
-        <div>
-          <div class="detail-section-title">File Scope</div>
-          <div class="file-chips">
-            ${card.file_scope.map((f) => `<span class="file-chip">${escHtml(f)}</span>`).join("")}
-          </div>
-        </div>
-      `
-          : ""
-      }
-
-      ${
-        nextCol
-          ? `
-        <button class="move-btn" style="background:${nextCol.color}"
-          onclick="moveCard('${card.id}', '${nextCol.slug}')">
-          Move to ${nextCol.label} →
-        </button>
-      `
-          : ""
-      }
-
-      <div>
-        <div class="detail-section-title">Agent Log</div>
-        <div class="log-list">
-          ${[...card.agent_log]
-            .reverse()
-            .map(
-              (entry) => `
-            <div class="log-item">
-              <span class="log-time">${new Date(entry.timestamp).toLocaleTimeString()}</span>
-              <span class="log-agent">${entry.agent}</span>
-              <span class="log-action"> — ${entry.action}</span>
-              ${entry.detail ? `<div class="log-detail">${escHtml(entry.detail)}</div>` : ""}
+      document.getElementById('detailPanel').innerHTML = `
+        <div class="detail-top-bar" style="background:linear-gradient(90deg,${col.color},${col.color}33,transparent)"></div>
+        <div class="detail-body">
+          <div class="detail-hdr">
+            <div style="flex:1;min-width:0">
+              <span class="detail-col-pill" style="background:${col.color}15;color:${col.color};border:1px solid ${col.color}28">${col.label}</span>
+              <div class="detail-title">${escHtml(card.title)}</div>
             </div>
-          `,
-            )
-            .join("")}
-        </div>
-      </div>
-    `;
+            <button class="detail-close" onclick="closeDetail()">×</button>
+          </div>
 
-        document.getElementById("detailOverlay").classList.add("open");
-      }
+          ${card.description ? `<p class="detail-desc">${escHtml(card.description)}</p>` : ''}
 
-      function closeDetail() {
-        document.getElementById("detailOverlay").classList.remove("open");
-      }
+          ${card.acceptance_criteria?.length ? `
+            <div>
+              <div class="sec-title">Acceptance Criteria</div>
+              <ul class="criteria-list">
+                ${card.acceptance_criteria.map(c => `<li class="criteria-item"><span class="criteria-check">✓</span><span>${escHtml(c)}</span></li>`).join('')}
+              </ul>
+            </div>` : ''}
 
-      function handleOverlayClick(e) {
-        if (e.target === document.getElementById("detailOverlay")) closeDetail();
-      }
+          ${card.annotations ? `
+            <div class="annotation-box">
+              <div class="annotation-hdr">Bounced Back ${card.bounce_count > 0 ? `<span class="bounce-pill">${card.bounce_count}×</span>` : ''}</div>
+              <p class="annotation-text"><strong style="color:#CBD5E1">Root cause:</strong> ${escHtml(card.annotations.root_cause)}</p>
+              ${card.annotations.suggested_fix ? `<p class="annotation-text" style="margin-top:6px"><strong style="color:#CBD5E1">Suggested fix:</strong> ${escHtml(card.annotations.suggested_fix)}</p>` : ''}
+              ${card.annotations.failed_tests?.length ? `
+                <div style="margin-top:10px;font-size:10px;font-weight:700;color:#F87171;text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px">Failed Tests</div>
+                ${card.annotations.failed_tests.map(t => `<div class="failed-test">${escHtml(t)}</div>`).join('')}` : ''}
+            </div>` : ''}
 
-      // ── Move Card ─────────────────────────────────────────────────────────────────
-      async function moveCard(cardId, column) {
-        await fetch(`${API}/api/cards/${cardId}/move`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ column, moved_by: "human" }),
-        });
-        closeDetail();
-        loadCards();
-      }
+          ${card.file_scope?.length ? `
+            <div>
+              <div class="sec-title">File Scope</div>
+              <div class="file-chips">${card.file_scope.map(f => `<span class="file-chip">${escHtml(f)}</span>`).join('')}</div>
+            </div>` : ''}
 
-      // ── New Card Modal ────────────────────────────────────────────────────────────
-      function openNewCardModal() {
-        if (!selectedRepoId) {
-          alert("Select or register a repo first.");
-          return;
-        }
-        document.getElementById("modalOverlay").classList.add("open");
-        document.getElementById("cardTitle").focus();
-      }
+          ${card.pr_url ? `<a class="pr-link" href="${escHtml(card.pr_url)}" target="_blank" rel="noopener">View Pull Request <span style="opacity:.6;font-size:11px">↗</span></a>` : ''}
 
-      function closeModal() {
-        document.getElementById("modalOverlay").classList.remove("open");
-        ["cardTitle", "cardDesc", "cardCriteria", "cardScope"].forEach(
-          (id) => (document.getElementById(id).value = ""),
-        );
-        document.getElementById("cardAgent").value = "frontend_dev";
-        document.getElementById("cardComplexity").value = "medium";
-      }
+          ${nextCol ? `
+            <button class="move-btn"
+              style="background:linear-gradient(135deg,${nextCol.color},${nextCol.color}BB);box-shadow:0 4px 20px ${nextCol.color}28"
+              onclick="moveCard('${card.id}','${nextCol.slug}')">
+              Move to ${nextCol.label} →
+            </button>` : ''}
 
-      function handleModalClick(e) {
-        if (e.target === document.getElementById("modalOverlay")) closeModal();
-      }
+          <div class="divider"></div>
 
-      async function createCard() {
-        const title = document.getElementById("cardTitle").value.trim();
-        if (!title) {
-          document.getElementById("cardTitle").focus();
-          return;
-        }
+          <div>
+            <div class="sec-title">Agent Log</div>
+            <div class="log-list">
+              ${log.map((e, i) => `
+                <div class="log-item${i === 0 ? ' log-first' : ''}">
+                  <div class="log-meta">
+                    <span class="log-agent">${e.agent}</span>
+                    <span class="log-action">${e.action}</span>
+                    <span class="log-time">${new Date(e.timestamp).toLocaleTimeString()}</span>
+                  </div>
+                  ${e.detail ? `<div class="log-detail">${escHtml(e.detail)}</div>` : ''}
+                </div>`).join('')}
+            </div>
+          </div>
+        </div>`;
 
-        const criteriaRaw = document.getElementById("cardCriteria").value.trim();
-        const scopeRaw = document.getElementById("cardScope").value.trim();
+      document.getElementById('detailOverlay').classList.add('open');
+    }
 
-        const body = {
-          title,
-          description: document.getElementById("cardDesc").value.trim(),
-          acceptance_criteria: criteriaRaw
-            ? criteriaRaw
-                .split("\n")
-                .map((s) => s.trim())
-                .filter(Boolean)
-            : [],
-          assigned_agent: document.getElementById("cardAgent").value,
-          estimated_complexity: document.getElementById("cardComplexity").value,
-          file_scope: scopeRaw
-            ? scopeRaw
-                .split(",")
-                .map((s) => s.trim())
-                .filter(Boolean)
-            : [],
-        };
+    function closeDetail() { document.getElementById('detailOverlay').classList.remove('open'); }
+    function handleOverlayClick(e) { if (e.target === document.getElementById('detailOverlay')) closeDetail(); }
 
-        const btn = document.getElementById("createBtn");
-        btn.disabled = true;
-        btn.textContent = "Creating…";
-
-        try {
-          await fetch(`${API}/api/repos/${selectedRepoId}/cards`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(body),
-          });
-          closeModal();
-          loadCards();
-        } finally {
-          btn.disabled = false;
-          btn.textContent = "Create Card";
-        }
-      }
-
-      // ── Live Feed ─────────────────────────────────────────────────────────────────
-      function addFeedItem(message) {
-        feedItems.unshift({ message, ts: new Date().toLocaleTimeString() });
-        if (feedItems.length > 50) feedItems.pop();
-        renderFeed();
-      }
-
-      function renderFeed() {
-        const list = document.getElementById("feedList");
-        if (!feedItems.length) {
-          list.innerHTML = '<div class="feed-empty">Waiting for agent activity…</div>';
-          return;
-        }
-        list.innerHTML = feedItems
-          .map(
-            (f) => `
-      <div class="feed-item">
-        <span class="feed-time">${f.ts}</span>
-        ${escHtml(f.message)}
-      </div>
-    `,
-          )
-          .join("");
-      }
-
-      // ── Utils ─────────────────────────────────────────────────────────────────────
-      function escHtml(s) {
-        return String(s || "")
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;")
-          .replace(/"/g, "&quot;");
-      }
-
-      // Keyboard shortcuts
-      document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") {
-          closeDetail();
-          closeModal();
-        }
+    // ── Move Card ─────────────────────────────────────────────────────────────
+    async function moveCard(cardId, column) {
+      await fetch(`${API}/api/cards/${cardId}/move`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ column, moved_by: 'human' }),
       });
+      closeDetail();
+      loadCards();
+    }
 
-      // ── Init ──────────────────────────────────────────────────────────────────────
-      connectWS();
-      loadRepos();
+    // ── New Card Modal ─────────────────────────────────────────────────────────
+    function openNewCardModal() {
+      if (!selectedRepoId) { alert('Select or register a repo first.'); return; }
+      document.getElementById('modalOverlay').classList.add('open');
+      setTimeout(() => document.getElementById('cardTitle').focus(), 50);
+    }
+    function closeModal() {
+      document.getElementById('modalOverlay').classList.remove('open');
+      ['cardTitle','cardDesc','cardCriteria','cardScope'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('cardAgent').value = 'frontend_dev';
+      document.getElementById('cardComplexity').value = 'medium';
+    }
+    function handleModalClick(e) { if (e.target === document.getElementById('modalOverlay')) closeModal(); }
 
-      // Poll every 10s as a fallback in case WS misses an event
-      setInterval(loadCards, 10000);
-    </script>
-  </body>
+    async function createCard() {
+      const title = document.getElementById('cardTitle').value.trim();
+      if (!title) { document.getElementById('cardTitle').focus(); return; }
+      const criteriaRaw = document.getElementById('cardCriteria').value.trim();
+      const scopeRaw    = document.getElementById('cardScope').value.trim();
+      const body = {
+        title,
+        description: document.getElementById('cardDesc').value.trim(),
+        acceptance_criteria: criteriaRaw ? criteriaRaw.split('\n').map(s => s.trim()).filter(Boolean) : [],
+        assigned_agent: document.getElementById('cardAgent').value,
+        estimated_complexity: document.getElementById('cardComplexity').value,
+        file_scope: scopeRaw ? scopeRaw.split(',').map(s => s.trim()).filter(Boolean) : [],
+      };
+      const btn = document.getElementById('createBtn');
+      btn.disabled = true; btn.textContent = 'Creating…';
+      try {
+        await fetch(`${API}/api/repos/${selectedRepoId}/cards`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+        });
+        closeModal(); loadCards();
+      } finally { btn.disabled = false; btn.textContent = 'Create Card'; }
+    }
+
+    // ── Live Feed ─────────────────────────────────────────────────────────────
+    function addFeedItem(message) {
+      feedItems.unshift({ message, ts: new Date().toLocaleTimeString(), id: feedIdCounter++ });
+      if (feedItems.length > 50) feedItems.pop();
+      renderFeed(true);
+    }
+
+    function renderFeed(hasNew = false) {
+      const list = document.getElementById('feedList');
+      const countEl = document.getElementById('feedCount');
+      if (!feedItems.length) {
+        list.innerHTML = '<div class="feed-empty">Waiting for agent activity…</div>';
+        countEl.style.display = 'none';
+        return;
+      }
+      countEl.style.display = '';
+      countEl.textContent = feedItems.length;
+      list.innerHTML = feedItems.map((f, i) => `
+        <div class="feed-item${i === 0 ? ' newest' : ''}${i === 0 && hasNew ? ' feed-slide-in' : ''}">
+          <span class="feed-time">${f.ts}</span>${escHtml(f.message)}
+        </div>`).join('');
+    }
+
+    // ── Utils ─────────────────────────────────────────────────────────────────
+    function escHtml(s) {
+      return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeDetail(); closeModal(); } });
+
+    connectWS();
+    loadRepos();
+    setInterval(loadCards, 10000);
+  </script>
+</body>
 </html>
