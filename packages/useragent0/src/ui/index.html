@@ -637,21 +637,12 @@
       const API = ""; // same origin — Express serves this file
       const WS_URL = `ws://${location.host}`;
 
-      const COLUMNS = [
-        { id: "pm_creates", label: "PM Creates", color: "#00C9A7" },
-        { id: "in_progress", label: "In Progress", color: "#FFD166", gate: true },
-        { id: "commit", label: "Commit", color: "#7C3AED" },
-        { id: "create_pr", label: "Create PR", color: "#00C9A7" },
-        { id: "test", label: "Test", color: "#FFD166" },
-        { id: "qa", label: "QA", color: "#F06595", gate: true },
-        { id: "done", label: "Done", color: "#22C55E" },
-      ];
-
       const COMPLEXITY_COLORS = { small: "#22C55E", medium: "#FFD166", large: "#EF4444" };
 
       // ── State ───────────────────────────────────────────────────────────────────
       let repos = [];
       let selectedRepoId = null;
+      let columns = [];
       let cards = [];
       let feedItems = [];
 
@@ -694,6 +685,10 @@
         if (msg.type === "repo:registered") {
           loadRepos();
         }
+        if (msg.type === "columns:updated" && msg.payload.repo_id === selectedRepoId) {
+          columns = msg.payload.columns;
+          renderBoard();
+        }
       }
 
       // ── Data Loading ─────────────────────────────────────────────────────────────
@@ -710,6 +705,13 @@
           selectedRepoId = repos[0].id;
           sel.value = selectedRepoId;
         }
+        loadColumns();
+      }
+
+      async function loadColumns() {
+        if (!selectedRepoId) return;
+        const res = await fetch(`${API}/api/repos/${selectedRepoId}/columns`);
+        columns = await res.json();
         loadCards();
       }
 
@@ -722,31 +724,42 @@
 
       function selectRepo(id) {
         selectedRepoId = id;
-        loadCards();
+        loadColumns();
       }
 
       // ── Render Board ─────────────────────────────────────────────────────────────
       function renderBoard() {
         const container = document.getElementById("columns");
-        container.innerHTML = COLUMNS.map((col) => {
-          const colCards = cards.filter((c) => c.column === col.id);
+        if (!columns.length) {
+          container.innerHTML = '<div style="padding:32px;color:var(--slate)">No columns configured. Run useragent0 columns set.</div>';
+          return;
+        }
+
+        // Collect orphaned cards (column slug not in current columns)
+        const knownSlugs = new Set(columns.map((c) => c.slug));
+        const orphaned = cards.filter((c) => !knownSlugs.has(c.column));
+
+        const allCols = [...columns];
+        if (orphaned.length) {
+          allCols.push({ slug: "__orphaned__", label: "Unknown", color: "#8FA8C0", human_gate: false, position: 999 });
+        }
+
+        container.innerHTML = allCols.map((col) => {
+          const colCards = col.slug === "__orphaned__"
+            ? orphaned
+            : cards.filter((c) => c.column === col.slug);
           return `
         <div class="column">
           <div class="col-header">
             <div class="col-dot" style="background:${col.color}"></div>
             <span class="col-name">${col.label}</span>
-            ${col.gate ? '<span class="col-gate" title="Human checkpoint">👤</span>' : ""}
+            ${col.human_gate ? '<span class="col-gate" title="Human checkpoint">👤</span>' : ""}
             <span class="col-count">${colCards.length}</span>
           </div>
           <div class="col-cards">
-            ${
-              colCards.length
-                ? colCards.map((c) => renderCard(c, col)).join("")
-                : '<div class="empty-state">No cards</div>'
-            }
+            ${colCards.length ? colCards.map((c) => renderCard(c, col)).join("") : '<div class="empty-state">No cards</div>'}
           </div>
-        </div>
-      `;
+        </div>`;
         }).join("");
       }
 
@@ -760,6 +773,7 @@
           <span class="tag" style="background:#8FA8C022;color:#8FA8C0">${agentLabel}</span>
           ${complexity ? `<span class="tag" style="background:${COMPLEXITY_COLORS[complexity]}22;color:${COMPLEXITY_COLORS[complexity]}">${complexity}</span>` : ""}
           ${card.bounce_count > 0 ? `<span class="bounce-badge">↩ ${card.bounce_count}</span>` : ""}
+          ${card.tokens_used > 0 ? `<span class="tag" style="background:#7C3AED22;color:#a78bfa" title="Total tokens used">🪙 ${card.tokens_used.toLocaleString()}</span>` : ""}
         </div>
       </div>
     `;
@@ -769,9 +783,9 @@
       function openDetail(cardId) {
         const card = cards.find((c) => c.id === cardId);
         if (!card) return;
-        const col = COLUMNS.find((c) => c.id === card.column);
-        const colIdx = COLUMNS.findIndex((c) => c.id === card.column);
-        const nextCol = COLUMNS[colIdx + 1];
+        const col = columns.find((c) => c.slug === card.column) ?? { label: card.column, color: "#8FA8C0", human_gate: false };
+        const colIdx = columns.findIndex((c) => c.slug === card.column);
+        const nextCol = columns[colIdx + 1];
 
         const panel = document.getElementById("detailPanel");
         panel.innerHTML = `
@@ -853,7 +867,7 @@
         nextCol
           ? `
         <button class="move-btn" style="background:${nextCol.color}"
-          onclick="moveCard('${card.id}', '${nextCol.id}')">
+          onclick="moveCard('${card.id}', '${nextCol.slug}')">
           Move to ${nextCol.label} →
         </button>
       `

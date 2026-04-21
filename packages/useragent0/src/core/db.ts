@@ -9,9 +9,11 @@ import type {
   KanbanColumn,
   CardLogEntry,
   CardAnnotation,
+  ColumnConfig,
   Repo,
   AgentId,
 } from './types';
+import { COLUMN_TEMPLATES } from './types';
 
 // ─── Paths ────────────────────────────────────────────────────────────────────
 
@@ -58,6 +60,20 @@ const SCHEMA = `
 
   CREATE INDEX IF NOT EXISTS idx_cards_repo_id ON cards(repo_id);
   CREATE INDEX IF NOT EXISTS idx_cards_column ON cards(column);
+
+  CREATE TABLE IF NOT EXISTS repo_columns (
+    id         TEXT PRIMARY KEY,
+    repo_id    TEXT NOT NULL,
+    slug       TEXT NOT NULL,
+    label      TEXT NOT NULL,
+    color      TEXT NOT NULL DEFAULT '#8FA8C0',
+    position   INTEGER NOT NULL DEFAULT 0,
+    human_gate INTEGER NOT NULL DEFAULT 0,
+    FOREIGN KEY (repo_id) REFERENCES repos(id) ON DELETE CASCADE,
+    UNIQUE(repo_id, slug)
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_repo_columns_repo_id ON repo_columns(repo_id);
 `;
 
 // ─── DB Client ────────────────────────────────────────────────────────────────
@@ -75,8 +91,51 @@ export class DBClient {
 
   private migrate(): void {
     this.db.exec(SCHEMA);
-    // Add tokens_used column to existing databases that predate it
     try { this.db.exec('ALTER TABLE cards ADD COLUMN tokens_used INTEGER NOT NULL DEFAULT 0'); } catch {}
+    this.migrateColumns();
+  }
+
+  private migrateColumns(): void {
+    const repos = this.db.prepare('SELECT id FROM repos').all() as { id: string }[];
+    for (const { id: repoId } of repos) {
+      const count = (this.db.prepare(
+        'SELECT COUNT(*) as n FROM repo_columns WHERE repo_id = ?'
+      ).get(repoId) as { n: number }).n;
+      if (count === 0) this.insertColumns(repoId, LEGACY_COLUMNS);
+    }
+  }
+
+  private insertColumns(repoId: string, cols: Omit<ColumnConfig, 'id' | 'repo_id'>[]): void {
+    const stmt = this.db.prepare(`
+      INSERT OR IGNORE INTO repo_columns (id, repo_id, slug, label, color, position, human_gate)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `);
+    for (const col of cols) {
+      stmt.run(uuidv4(), repoId, col.slug, col.label, col.color, col.position, col.human_gate ? 1 : 0);
+    }
+  }
+
+  getColumns(repoId: string): ColumnConfig[] {
+    const rows = this.db.prepare(
+      'SELECT * FROM repo_columns WHERE repo_id = ? ORDER BY position ASC'
+    ).all(repoId) as ColumnRow[];
+    return rows.map(deserializeColumn);
+  }
+
+  setColumns(repoId: string, cols: Omit<ColumnConfig, 'id' | 'repo_id'>[]): ColumnConfig[] {
+    const run = this.db.transaction(() => {
+      this.db.prepare('DELETE FROM repo_columns WHERE repo_id = ?').run(repoId);
+      this.insertColumns(repoId, cols);
+    });
+    run();
+    return this.getColumns(repoId);
+  }
+
+  private firstColumnSlug(repoId: string): string {
+    const row = this.db.prepare(
+      'SELECT slug FROM repo_columns WHERE repo_id = ? ORDER BY position ASC LIMIT 1'
+    ).get(repoId) as { slug: string } | undefined;
+    return row?.slug ?? 'todo';
   }
 
   close(): void {
@@ -84,7 +143,7 @@ export class DBClient {
   }
 
   clearAll(): void {
-    this.db.exec('DELETE FROM cards; DELETE FROM repos;');
+    this.db.exec('DELETE FROM cards; DELETE FROM repo_columns; DELETE FROM repos;');
   }
 
   // ─── Repos ──────────────────────────────────────────────────────────────────
@@ -110,6 +169,7 @@ export class DBClient {
       VALUES (?, ?, ?, ?, ?, ?)
     `).run(repo.id, repo.name, repo.path, repo.git_platform, JSON.stringify(repo.active_agents), repo.registered_at);
 
+    this.insertColumns(repo.id, COLUMN_TEMPLATES.simple);
     return repo;
   }
 
@@ -145,7 +205,7 @@ export class DBClient {
       acceptance_criteria: input.acceptance_criteria,
       assigned_agent: input.assigned_agent,
       file_scope: input.file_scope,
-      column: 'pm_creates',
+      column: input.initial_column ?? this.firstColumnSlug(input.repo_id),
       agent_log: [{
         agent: 'pm',
         action: 'card_created',
@@ -235,15 +295,19 @@ export class DBClient {
   }
 
   getNextCard(repoId: string, assignedAgent?: AgentId): Card | null {
-    const row = assignedAgent
-      ? this.db.prepare(
-          `SELECT * FROM cards WHERE repo_id = ? AND assigned_agent = ?
-           AND column IN ('pm_creates','in_progress') ORDER BY created_at ASC LIMIT 1`
-        ).get(repoId, assignedAgent) as CardRow | undefined
-      : this.db.prepare(
-          `SELECT * FROM cards WHERE repo_id = ?
-           AND column IN ('pm_creates','in_progress') ORDER BY created_at ASC LIMIT 1`
-        ).get(repoId) as CardRow | undefined;
+    const firstTwo = (this.db.prepare(
+      'SELECT slug FROM repo_columns WHERE repo_id = ? ORDER BY position ASC LIMIT 2'
+    ).all(repoId) as { slug: string }[]).map(r => r.slug);
+
+    if (!firstTwo.length) return null;
+    const placeholders = firstTwo.map(() => '?').join(',');
+    const params = assignedAgent
+      ? [repoId, assignedAgent, ...firstTwo]
+      : [repoId, ...firstTwo];
+    const sql = assignedAgent
+      ? `SELECT * FROM cards WHERE repo_id = ? AND assigned_agent = ? AND column IN (${placeholders}) ORDER BY created_at ASC LIMIT 1`
+      : `SELECT * FROM cards WHERE repo_id = ? AND column IN (${placeholders}) ORDER BY created_at ASC LIMIT 1`;
+    const row = this.db.prepare(sql).get(...params) as CardRow | undefined;
     return row ? deserializeCard(row) : null;
   }
 
@@ -308,6 +372,30 @@ interface CardRow {
   created_at: string;
   updated_at: string;
 }
+
+interface ColumnRow {
+  id: string;
+  repo_id: string;
+  slug: string;
+  label: string;
+  color: string;
+  position: number;
+  human_gate: number;
+}
+
+function deserializeColumn(row: ColumnRow): ColumnConfig {
+  return { ...row, human_gate: row.human_gate === 1 };
+}
+
+const LEGACY_COLUMNS: Omit<ColumnConfig, 'id' | 'repo_id'>[] = [
+  { slug: 'pm_creates',  label: 'PM Creates',  color: '#00C9A7', position: 0, human_gate: false },
+  { slug: 'in_progress', label: 'In Progress',  color: '#FFD166', position: 1, human_gate: true  },
+  { slug: 'commit',      label: 'Commit',       color: '#7C3AED', position: 2, human_gate: false },
+  { slug: 'create_pr',   label: 'Create PR',    color: '#00C9A7', position: 3, human_gate: false },
+  { slug: 'test',        label: 'Test',         color: '#FFD166', position: 4, human_gate: false },
+  { slug: 'qa',          label: 'QA',           color: '#F06595', position: 5, human_gate: true  },
+  { slug: 'done',        label: 'Done',         color: '#22C55E', position: 6, human_gate: false },
+];
 
 function deserializeRepo(row: RepoRow): Repo {
   return {

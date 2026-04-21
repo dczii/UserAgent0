@@ -115,9 +115,29 @@ app.post('/api/cards/:cardId/bounce', (req, res) => {
 
   let card = db.setAnnotations(req.params.cardId, annotation);
   if (!card) return res.status(404).json({ error: 'Card not found' });
-  card = db.moveCard(req.params.cardId, 'in_progress', 'tester') ?? card;
+  const bounceTarget = db.getColumns(card.repo_id)[1]?.slug ?? db.getColumns(card.repo_id)[0]?.slug ?? 'in_progress';
+  card = db.moveCard(req.params.cardId, bounceTarget, 'tester') ?? card;
   broadcast({ type: 'card:bounced', payload: card });
   res.json(card);
+});
+
+// Columns
+app.get('/api/repos/:repoId/columns', (req, res) => {
+  res.json(db.getColumns(req.params.repoId));
+});
+
+app.put('/api/repos/:repoId/columns', (req, res) => {
+  const cols = req.body as { slug: string; label: string; color?: string; position: number; human_gate?: boolean }[];
+  if (!Array.isArray(cols) || !cols.length) return res.status(400).json({ error: 'columns array required' });
+  const saved = db.setColumns(req.params.repoId, cols.map((c, i) => ({
+    slug: c.slug,
+    label: c.label,
+    color: c.color ?? '#8FA8C0',
+    position: c.position ?? i,
+    human_gate: c.human_gate ?? false,
+  })));
+  broadcast({ type: 'columns:updated', payload: { repo_id: req.params.repoId, columns: saved } });
+  res.json(saved);
 });
 
 // Live feed (agent pushes status messages)
@@ -252,10 +272,16 @@ async function handleMCPTool(name: string, input: Record<string, unknown>) {
       };
       let card = db.setAnnotations(card_id, annotation);
       if (!card) throw new Error(`Card ${card_id} not found`);
-      card = db.moveCard(card_id, 'in_progress', 'tester') ?? card;
+      const bounceTarget = db.getColumns(card.repo_id)[1]?.slug ?? db.getColumns(card.repo_id)[0]?.slug ?? 'in_progress';
+      card = db.moveCard(card_id, bounceTarget, 'tester') ?? card;
       broadcast({ type: 'card:bounced', payload: card });
       broadcastFeed(card_id, 'tester', `"${card.title}" bounced back ↩  Root cause: ${root_cause}`);
       return card;
+    }
+
+    case 'list_columns': {
+      const { repo_id } = input as { repo_id: string };
+      return db.getColumns(repo_id);
     }
 
     case 'set_current_card': {

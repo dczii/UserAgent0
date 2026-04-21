@@ -1,33 +1,47 @@
 // ─── Kanban Column Types ──────────────────────────────────────────────────────
 
-export type KanbanColumn =
-  | 'pm_creates'
-  | 'in_progress'
-  | 'commit'
-  | 'create_pr'
-  | 'test'
-  | 'qa'
-  | 'done';
+/** Column slug stored in cards.column — now a free string, validated against repo_columns */
+export type KanbanColumn = string;
 
-export const KANBAN_COLUMNS: KanbanColumn[] = [
-  'pm_creates',
-  'in_progress',
-  'commit',
-  'create_pr',
-  'test',
-  'qa',
-  'done',
-];
+export interface ColumnConfig {
+  id: string;
+  repo_id: string;
+  slug: string;
+  label: string;
+  color: string;
+  position: number;
+  human_gate: boolean;
+}
 
-export const COLUMN_LABELS: Record<KanbanColumn, string> = {
-  pm_creates: 'PM Creates',
-  in_progress: 'In Progress',
-  commit: 'Commit',
-  create_pr: 'Create PR',
-  test: 'Test',
-  qa: 'QA',
-  done: 'Done',
+// ─── Column Templates ─────────────────────────────────────────────────────────
+
+export type ColumnTemplate = 'simple' | 'dev_workflow' | 'custom';
+
+export const COLUMN_TEMPLATES: Record<'simple' | 'dev_workflow', Omit<ColumnConfig, 'id' | 'repo_id'>[]> = {
+  simple: [
+    { slug: 'todo',        label: 'TODO',        color: '#00C9A7', position: 0, human_gate: false },
+    { slug: 'in_progress', label: 'IN PROGRESS', color: '#FFD166', position: 1, human_gate: false },
+    { slug: 'done',        label: 'DONE',         color: '#22C55E', position: 2, human_gate: false },
+  ],
+  dev_workflow: [
+    { slug: 'todo',        label: 'TODO',        color: '#00C9A7', position: 0, human_gate: false },
+    { slug: 'in_progress', label: 'IN PROGRESS', color: '#FFD166', position: 1, human_gate: false },
+    { slug: 'test',        label: 'TEST',         color: '#7C3AED', position: 2, human_gate: false },
+    { slug: 'qa',          label: 'QA',           color: '#F06595', position: 3, human_gate: true  },
+    { slug: 'done',        label: 'DONE',         color: '#22C55E', position: 4, human_gate: false },
+  ],
 };
+
+/** All available columns a user can pick from when choosing "Custom" */
+export const CUSTOM_COLUMN_CHOICES: Omit<ColumnConfig, 'id' | 'repo_id' | 'position'>[] = [
+  { slug: 'todo',        label: 'TODO',        color: '#00C9A7', human_gate: false },
+  { slug: 'in_progress', label: 'IN PROGRESS', color: '#FFD166', human_gate: false },
+  { slug: 'test',        label: 'TEST',         color: '#7C3AED', human_gate: false },
+  { slug: 'qa',          label: 'QA',           color: '#F06595', human_gate: true  },
+  { slug: 'commit',      label: 'COMMIT',       color: '#00C9A7', human_gate: false },
+  { slug: 'create_pr',   label: 'CREATE PR',    color: '#F06595', human_gate: false },
+  { slug: 'done',        label: 'DONE',         color: '#22C55E', human_gate: false },
+];
 
 // ─── Agent Types ──────────────────────────────────────────────────────────────
 
@@ -101,6 +115,7 @@ export type CreateCardInput = Pick<
   | 'file_scope'
 > & {
   estimated_complexity?: Card['estimated_complexity'];
+  initial_column?: string;
 };
 
 // ─── Repository ───────────────────────────────────────────────────────────────

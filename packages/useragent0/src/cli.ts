@@ -90,6 +90,39 @@ program
     console.log(teal(`  Initialising useragent0 for: ${bold(repoName)}`));
     console.log();
 
+    const { COLUMN_TEMPLATES, CUSTOM_COLUMN_CHOICES } = await import('./core');
+
+    // ── Column template ────────────────────────────────────────────────────────
+    const { columnTemplate } = await inquirer.prompt([
+      {
+        type: 'list',
+        name: 'columnTemplate',
+        message: 'Kanban column template?',
+        choices: [
+          { name: 'Simple            — TODO → IN PROGRESS → DONE', value: 'simple' },
+          { name: 'Dev Workflow      — TODO → IN PROGRESS → TEST → QA → DONE', value: 'dev_workflow' },
+          { name: 'Custom            — choose your own columns', value: 'custom' },
+        ],
+        default: 'simple',
+      },
+    ]);
+
+    let selectedColumns: typeof CUSTOM_COLUMN_CHOICES;
+    if (columnTemplate === 'custom') {
+      const { picked } = await inquirer.prompt([
+        {
+          type: 'checkbox',
+          name: 'picked',
+          message: 'Select columns (in the order shown — you can reorder after):',
+          choices: CUSTOM_COLUMN_CHOICES.map(c => ({ name: c.label, value: c.slug, checked: ['todo','in_progress','done'].includes(c.slug) })),
+          validate: (v: string[]) => v.length >= 1 ? true : 'Select at least one column',
+        },
+      ]);
+      selectedColumns = CUSTOM_COLUMN_CHOICES.filter(c => picked.includes(c.slug));
+    } else {
+      selectedColumns = COLUMN_TEMPLATES[columnTemplate as 'simple' | 'dev_workflow'];
+    }
+
     const answers = await inquirer.prompt([
       {
         type: 'checkbox',
@@ -168,6 +201,7 @@ program
       const db = new DBClient(DB_PATH);
       const repo = db.registerRepo(repoName, cwd, 'github');
       db.updateRepoAgents(repo.id, answers.agents);
+      db.setColumns(repo.id, selectedColumns.map((c, i) => ({ ...c, position: i })));
       db.close();
       console.log();
       console.log(green('  ✓') + `  Repo registered  ${dim(`(id: ${repo.id.slice(0, 8)}...)`)}`);
@@ -337,7 +371,183 @@ program
     console.log(`  ${teal('useragent0 status')}        Show registered repos and card counts`);
     console.log(`  ${teal('useragent0 db-clear')}      Delete all data from the database`);
     console.log(`  ${teal('useragent0 config')}        View or set global config`);
+    console.log(`  ${teal('useragent0 install-global')} Install into IDE(s) globally — active on every prompt`);
     console.log(`  ${teal('useragent0 help-guide')}    Show this guide`);
+    console.log();
+  });
+
+// ─── useragent0 install-global ────────────────────────────────────────────────
+
+const IDE_CONFIGS: Record<string, { label: string; mcpPath: string; claudeMdPath?: string }> = {
+  claude_code: {
+    label: 'Claude Code',
+    mcpPath: path.join(os.homedir(), '.claude', 'claude_mcp_config.json'),
+    claudeMdPath: path.join(os.homedir(), '.claude', 'CLAUDE.md'),
+  },
+  cursor: {
+    label: 'Cursor',
+    mcpPath: path.join(os.homedir(), '.cursor', 'mcp.json'),
+  },
+  windsurf: {
+    label: 'Windsurf',
+    mcpPath: path.join(os.homedir(), '.codeium', 'windsurf', 'mcp_config.json'),
+  },
+  vscode: {
+    label: 'VS Code',
+    mcpPath: path.join(os.homedir(), '.vscode', 'mcp.json'),
+  },
+  antigravity: {
+    label: 'AntiGravity',
+    mcpPath: path.join(os.homedir(), '.antigravity', 'mcp.json'),
+  },
+};
+
+const GLOBAL_CLAUDE_MD = `# useragent0 — Global AI Agent Instructions
+
+You are connected to [useragent0](https://github.com/dczii/UserAgent0), a Kanban task coordination layer.
+**Use useragent0 MCP tools on every task in every repository.**
+
+## On every session start
+
+1. Call \`list_repos\` to see registered repositories
+2. Call \`get_next_card(repo_id)\` to find what to work on
+3. If no card exists for the current task, call \`create_card\` before starting
+
+## Before starting any work
+
+\`\`\`
+set_current_card(card_id, repo_id)   ← required for git hooks to work
+move_card(card_id, "in_progress")    ← move card to active state
+append_log(...)                      ← log your plan
+\`\`\`
+
+## After every action
+
+Call \`append_log\` with:
+- \`action\`: what you did
+- \`detail\`: full description
+- \`files_changed\`: list of file paths
+- \`commands_run\`: CLI commands executed
+- \`outcome\`: pass/fail + details
+- \`next_step\`: what comes next
+- \`tokens\`: tokens used in this action
+
+## MCP Server
+
+Runs at \`http://localhost:4000/mcp\` — start with \`useragent0 start\`
+
+## Rules
+
+- Never work without a card
+- Never skip \`append_log\` after editing files or running commands
+- Always include token count in logs
+- Call \`set_current_card\` before every commit
+
+## Tools
+
+| Tool | Use when |
+|------|----------|
+| \`list_repos\` | Session start |
+| \`get_next_card\` | Session start — find work |
+| \`create_card\` | New task with no card |
+| \`set_current_card\` | Before starting work |
+| \`move_card\` | Column transitions |
+| \`append_log\` | After every action |
+| \`update_card\` | After PR is created |
+| \`bounce_card\` | Tests fail / QA rejects |
+| \`get_card\` | Check card history |
+| \`list_cards\` | See cards by column |
+`;
+
+const MCP_CONFIG = {
+  mcpServers: {
+    useragent0: {
+      url: 'http://localhost:4000/mcp',
+    },
+  },
+};
+
+program
+  .command('install-global')
+  .description('Install useragent0 globally into your IDE(s) so it is active on every prompt')
+  .action(async () => {
+    printBanner();
+    const { default: inquirer } = await import('inquirer');
+
+    console.log(teal('  Global IDE Installation'));
+    console.log(dim('  This will write the MCP config and CLAUDE.md to your IDE\'s global config.'));
+    console.log(dim('  useragent0 will then be active on every session in every repo.'));
+    console.log();
+
+    const { selectedIDEs } = await inquirer.prompt([
+      {
+        type: 'checkbox',
+        name: 'selectedIDEs',
+        message: 'Which IDEs do you want to configure?',
+        choices: Object.entries(IDE_CONFIGS).map(([value, { label }]) => ({
+          name: label,
+          value,
+          checked: value === 'claude_code',
+        })),
+      },
+    ]);
+
+    if (!selectedIDEs.length) {
+      console.log(dim('\n  No IDEs selected. Nothing was installed.\n'));
+      return;
+    }
+
+    console.log();
+
+    for (const ideKey of selectedIDEs) {
+      const ide = IDE_CONFIGS[ideKey];
+
+      // Write MCP config
+      try {
+        const dir = path.dirname(ide.mcpPath);
+        fs.mkdirSync(dir, { recursive: true });
+
+        let existing: Record<string, unknown> = {};
+        if (fs.existsSync(ide.mcpPath)) {
+          try { existing = JSON.parse(fs.readFileSync(ide.mcpPath, 'utf-8')); } catch {}
+        }
+
+        const merged = {
+          ...existing,
+          mcpServers: {
+            ...(existing.mcpServers as Record<string, unknown> ?? {}),
+            ...MCP_CONFIG.mcpServers,
+          },
+        };
+
+        fs.writeFileSync(ide.mcpPath, JSON.stringify(merged, null, 2), 'utf-8');
+        console.log(green('  ✓') + `  ${ide.label} — MCP config written`);
+        console.log(dim(`       ${ide.mcpPath}`));
+      } catch (err) {
+        console.log(red('  ✗') + `  ${ide.label} — failed to write MCP config`);
+        console.log(dim(`       ${String(err)}`));
+      }
+
+      // Write global CLAUDE.md (Claude Code only)
+      if (ide.claudeMdPath) {
+        try {
+          const dir = path.dirname(ide.claudeMdPath);
+          fs.mkdirSync(dir, { recursive: true });
+          fs.writeFileSync(ide.claudeMdPath, GLOBAL_CLAUDE_MD, 'utf-8');
+          console.log(green('  ✓') + `  ${ide.label} — global CLAUDE.md written`);
+          console.log(dim(`       ${ide.claudeMdPath}`));
+        } catch (err) {
+          console.log(red('  ✗') + `  ${ide.label} — failed to write CLAUDE.md`);
+          console.log(dim(`       ${String(err)}`));
+        }
+      }
+
+      console.log();
+    }
+
+    console.log(green('  Installation complete.'));
+    console.log(dim('  Make sure useragent0 start is running when using your IDE.'));
+    console.log(dim('  Restart your IDE for MCP changes to take effect.'));
     console.log();
   });
 
@@ -460,6 +670,104 @@ program
       console.error(err);
       process.exit(1);
     }
+  });
+
+// ─── useragent0 columns ───────────────────────────────────────────────────────
+
+program
+  .command('columns')
+  .description('Manage Kanban columns for the current repo')
+  .argument('[action]', 'list | set | add <label> | remove <slug>', 'list')
+  .argument('[arg]', 'label or slug depending on action')
+  .action(async (action: string, arg?: string) => {
+    printBanner();
+    const { DBClient, DB_PATH, COLUMN_TEMPLATES, CUSTOM_COLUMN_CHOICES } = await import('./core');
+    const { default: inquirer } = await import('inquirer');
+    const cwd = process.cwd();
+
+    const db = new DBClient(DB_PATH);
+    const repo = db.getRepoByPath(cwd);
+    if (!repo) {
+      console.error(red('  ✗  No useragent0 repo found here. Run useragent0 init first.'));
+      db.close();
+      process.exit(1);
+    }
+
+    if (action === 'list' || !action) {
+      const cols = db.getColumns(repo.id);
+      console.log(teal(`  Columns for: ${bold(repo.name)}`));
+      console.log();
+      cols.forEach(c => {
+        const gate = c.human_gate ? dim('  👤 human gate') : '';
+        console.log(`  ${bold(String(c.position + 1))}. ${bold(c.label)}${dim(` (${c.slug})`)}${gate}`);
+      });
+      console.log();
+
+    } else if (action === 'set') {
+      const { columnTemplate } = await inquirer.prompt([
+        {
+          type: 'list',
+          name: 'columnTemplate',
+          message: 'Choose a template or custom:',
+          choices: [
+            { name: 'Simple       — TODO → IN PROGRESS → DONE', value: 'simple' },
+            { name: 'Dev Workflow — TODO → IN PROGRESS → TEST → QA → DONE', value: 'dev_workflow' },
+            { name: 'Custom       — choose your own', value: 'custom' },
+          ],
+        },
+      ]);
+
+      let newCols;
+      if (columnTemplate === 'custom') {
+        const current = db.getColumns(repo.id).map(c => c.slug);
+        const { picked } = await inquirer.prompt([
+          {
+            type: 'checkbox',
+            name: 'picked',
+            message: 'Select columns:',
+            choices: CUSTOM_COLUMN_CHOICES.map(c => ({ name: c.label, value: c.slug, checked: current.includes(c.slug) })),
+            validate: (v: string[]) => v.length >= 1 ? true : 'Select at least one column',
+          },
+        ]);
+        newCols = CUSTOM_COLUMN_CHOICES.filter(c => picked.includes(c.slug)).map((c, i) => ({ ...c, position: i }));
+      } else {
+        newCols = COLUMN_TEMPLATES[columnTemplate as 'simple' | 'dev_workflow'].map((c, i) => ({ ...c, position: i }));
+      }
+
+      db.setColumns(repo.id, newCols);
+      console.log(green('  ✓') + '  Columns updated.');
+      newCols.forEach((c, i) => console.log(dim(`     ${i + 1}. ${c.label}`)));
+      console.log();
+
+    } else if (action === 'add') {
+      const label = arg ?? action;
+      if (!label) { console.error(red('  Usage: useragent0 columns add <label>')); process.exit(1); }
+      const slug = label.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+      const cols = db.getColumns(repo.id);
+      const newCol = { slug, label: label.toUpperCase(), color: '#8FA8C0', position: cols.length, human_gate: false };
+      db.setColumns(repo.id, [...cols.map(c => ({ slug: c.slug, label: c.label, color: c.color, position: c.position, human_gate: c.human_gate })), newCol]);
+      console.log(green('  ✓') + `  Added column: ${bold(label.toUpperCase())}`);
+      console.log();
+
+    } else if (action === 'remove') {
+      const slug = arg;
+      if (!slug) { console.error(red('  Usage: useragent0 columns remove <slug>')); process.exit(1); }
+      const cols = db.getColumns(repo.id);
+      const target = cols.find(c => c.slug === slug);
+      if (!target) { console.error(red(`  ✗  Column "${slug}" not found.`)); process.exit(1); }
+      const cardsInCol = db.listCardsByColumn(repo.id, slug);
+      if (cardsInCol.length > 0) {
+        console.log(red(`  ⚠  ${cardsInCol.length} card(s) are in "${slug}". They will become orphaned.`));
+        const { confirm } = await inquirer.prompt([{ type: 'confirm', name: 'confirm', message: 'Remove anyway?', default: false }]);
+        if (!confirm) { console.log(dim('  Cancelled.\n')); db.close(); return; }
+      }
+      const remaining = cols.filter(c => c.slug !== slug).map((c, i) => ({ ...c, position: i }));
+      db.setColumns(repo.id, remaining);
+      console.log(green('  ✓') + `  Removed column: ${bold(slug)}`);
+      console.log();
+    }
+
+    db.close();
   });
 
 // ─── CLAUDE.md Generator ──────────────────────────────────────────────────────

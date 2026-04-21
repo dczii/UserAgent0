@@ -103,7 +103,7 @@ export const MCP_TOOLS = [
       type: 'object',
       properties: {
         repo_id: { type: 'string' },
-        column: { type: 'string', enum: ['pm_creates','in_progress','commit','create_pr','test','qa','done'] },
+        column: { type: 'string', description: 'Column slug to filter by. Call list_columns(repo_id) to get valid slugs.' },
       },
       required: ['repo_id'],
     },
@@ -124,7 +124,7 @@ export const MCP_TOOLS = [
       type: 'object',
       properties: {
         card_id: { type: 'string' },
-        column: { type: 'string', enum: ['pm_creates','in_progress','commit','create_pr','test','qa','done'] },
+        column: { type: 'string', description: 'Column slug to move to. Call list_columns(repo_id) to get valid slugs for this repo.' },
         moved_by: { type: 'string' },
       },
       required: ['card_id', 'column'],
@@ -162,6 +162,17 @@ export const MCP_TOOLS = [
         suggested_fix: { type: 'string' },
       },
       required: ['card_id', 'root_cause'],
+    },
+  },
+  {
+    name: 'list_columns',
+    description: 'List the Kanban columns configured for a repo. Call this to get valid column slugs before calling move_card or list_cards.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        repo_id: { type: 'string' },
+      },
+      required: ['repo_id'],
     },
   },
   {
