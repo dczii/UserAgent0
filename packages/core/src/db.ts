@@ -11,6 +11,8 @@ import type {
   CardAnnotation,
   Repo,
   AgentId,
+  CardDependency,
+  CostStats,
 } from './types';
 
 // ─── Paths ────────────────────────────────────────────────────────────────────
@@ -57,7 +59,29 @@ const SCHEMA = `
 
   CREATE INDEX IF NOT EXISTS idx_cards_repo_id ON cards(repo_id);
   CREATE INDEX IF NOT EXISTS idx_cards_column ON cards(column);
+
+  CREATE TABLE IF NOT EXISTS card_dependencies (
+    card_id TEXT NOT NULL,
+    blocked_by_id TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    PRIMARY KEY (card_id, blocked_by_id),
+    FOREIGN KEY (card_id) REFERENCES cards(id) ON DELETE CASCADE,
+    FOREIGN KEY (blocked_by_id) REFERENCES cards(id) ON DELETE CASCADE
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_deps_card ON card_dependencies(card_id);
+  CREATE INDEX IF NOT EXISTS idx_deps_blocked_by ON card_dependencies(blocked_by_id);
 `;
+
+// ─── Pricing ──────────────────────────────────────────────────────────────────
+// Blended rate for Claude Sonnet 4.6 (~$9/M as a mid-point between $3 in / $15 out).
+// Configurable via GlobalConfig.token_price_per_million.
+
+export const DEFAULT_TOKEN_PRICE_PER_MILLION = 9;
+
+export function tokensToUsd(tokens: number, pricePerMillion = DEFAULT_TOKEN_PRICE_PER_MILLION): number {
+  return (tokens / 1_000_000) * pricePerMillion;
+}
 
 // ─── DB Client ────────────────────────────────────────────────────────────────
 
@@ -193,6 +217,16 @@ export class DBClient {
     const card = this.getCard(cardId);
     if (!card) return null;
 
+    if (column === 'in_progress') {
+      const openBlockers = this.getOpenBlockers(cardId);
+      if (openBlockers.length > 0) {
+        const titles = openBlockers.map(b => `"${b.title}"`).join(', ');
+        throw new Error(
+          `Cannot start card — blocked by ${openBlockers.length} open dependenc${openBlockers.length === 1 ? 'y' : 'ies'}: ${titles}`
+        );
+      }
+    }
+
     const now = new Date().toISOString();
     const logEntry: CardLogEntry = {
       agent: movedBy,
@@ -253,6 +287,116 @@ export class DBClient {
 
   deleteCard(cardId: string): void {
     this.db.prepare('DELETE FROM cards WHERE id = ?').run(cardId);
+  }
+
+  // ─── Dependencies ───────────────────────────────────────────────────────────
+
+  addDependency(cardId: string, blockedById: string): CardDependency {
+    if (cardId === blockedById) {
+      throw new Error('A card cannot depend on itself');
+    }
+    if (this.wouldCreateCycle(cardId, blockedById)) {
+      throw new Error('Dependency would create a cycle');
+    }
+
+    const now = new Date().toISOString();
+    this.db.prepare(`
+      INSERT OR IGNORE INTO card_dependencies (card_id, blocked_by_id, created_at)
+      VALUES (?, ?, ?)
+    `).run(cardId, blockedById, now);
+
+    return { card_id: cardId, blocked_by_id: blockedById, created_at: now };
+  }
+
+  removeDependency(cardId: string, blockedById: string): void {
+    this.db.prepare(
+      'DELETE FROM card_dependencies WHERE card_id = ? AND blocked_by_id = ?'
+    ).run(cardId, blockedById);
+  }
+
+  getBlockedBy(cardId: string): Card[] {
+    const rows = this.db.prepare(`
+      SELECT c.* FROM cards c
+      JOIN card_dependencies d ON d.blocked_by_id = c.id
+      WHERE d.card_id = ?
+      ORDER BY c.created_at ASC
+    `).all(cardId) as CardRow[];
+    return rows.map(deserializeCard);
+  }
+
+  getBlocks(cardId: string): Card[] {
+    const rows = this.db.prepare(`
+      SELECT c.* FROM cards c
+      JOIN card_dependencies d ON d.card_id = c.id
+      WHERE d.blocked_by_id = ?
+      ORDER BY c.created_at ASC
+    `).all(cardId) as CardRow[];
+    return rows.map(deserializeCard);
+  }
+
+  /** Returns any blockers that are NOT in the 'done' column. */
+  getOpenBlockers(cardId: string): Card[] {
+    return this.getBlockedBy(cardId).filter(c => c.column !== 'done');
+  }
+
+  private wouldCreateCycle(cardId: string, newBlockerId: string): boolean {
+    // If newBlockerId is (transitively) blocked by cardId, adding this edge would cycle.
+    const visited = new Set<string>();
+    const stack = [newBlockerId];
+    while (stack.length) {
+      const current = stack.pop()!;
+      if (current === cardId) return true;
+      if (visited.has(current)) continue;
+      visited.add(current);
+      const rows = this.db.prepare(
+        'SELECT blocked_by_id FROM card_dependencies WHERE card_id = ?'
+      ).all(current) as { blocked_by_id: string }[];
+      for (const r of rows) stack.push(r.blocked_by_id);
+    }
+    return false;
+  }
+
+  // ─── Cost ───────────────────────────────────────────────────────────────────
+
+  getCardTokens(cardId: string): number {
+    const card = this.getCard(cardId);
+    if (!card) return 0;
+    return card.agent_log.reduce((sum, e) => sum + (e.tokens ?? 0), 0);
+  }
+
+  getRepoCostStats(
+    repoId: string,
+    pricePerMillion = DEFAULT_TOKEN_PRICE_PER_MILLION,
+    budgetLimitUsd: number | null = null,
+  ): CostStats {
+    const cards = this.listCards(repoId);
+    let totalTokens = 0;
+    const byAgent = new Map<AgentId | 'human', number>();
+
+    for (const card of cards) {
+      for (const entry of card.agent_log) {
+        const t = entry.tokens ?? 0;
+        if (!t) continue;
+        totalTokens += t;
+        byAgent.set(entry.agent, (byAgent.get(entry.agent) ?? 0) + t);
+      }
+    }
+
+    const totalCost = tokensToUsd(totalTokens, pricePerMillion);
+    return {
+      total_tokens: totalTokens,
+      total_cost_usd: totalCost,
+      card_count: cards.length,
+      budget_limit_usd: budgetLimitUsd,
+      over_budget: budgetLimitUsd !== null && totalCost > budgetLimitUsd,
+      by_agent: Array.from(byAgent.entries())
+        .map(([agent, tokens]) => ({
+          agent,
+          tokens,
+          cost_usd: tokensToUsd(tokens, pricePerMillion),
+        }))
+        .sort((a, b) => b.tokens - a.tokens),
+    };
   }
 }
 

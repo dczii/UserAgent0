@@ -2,26 +2,82 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --navy: #0D1B2A;
-  --navy-mid: #1A2F45;
+/* ── Theme tokens ── */
+
+:root,
+html {
+  /* Dark (default) */
+  --bg-body: #0B1624;
+  --bg-dot:  #1A2F45;
+  --bg-header: linear-gradient(180deg, #0D1B2A 0%, #0A1825 100%);
+  --bg-sidebar: #0A1825;
+  --bg-panel: #142236;
+  --bg-panel-2: #1A2F45;
+  --bg-card: linear-gradient(135deg, #1A2F45 0%, #142236 100%);
+  --bg-detail: linear-gradient(180deg, #0F2035 0%, #0D1B2A 100%);
+  --bg-chip: #0D1B2A;
+  --bg-overlay: rgba(5,13,24,0.75);
+
+  --border-strong: #1A3348;
+  --border: #1E3A52;
+  --border-soft: #2D4F6E;
+
+  --text-primary: #ffffff;
+  --text: #e2e8f0;
+  --text-dim: #CBD5E1;
+  --text-muted: #94A3B8;
+  --text-faint: #475569;
+  --text-quiet: #3D5A73;
+  --text-ghost: #2D4F6E;
+
+  --scroll-thumb: #243B55;
+  --scroll-thumb-hover: #2D4F6E;
+
   --teal: #00C9A7;
   --accent: #FFD166;
 }
 
+html.theme-light {
+  --bg-body: #F1F5F9;
+  --bg-dot:  #D1DBE6;
+  --bg-header: linear-gradient(180deg, #ffffff 0%, #F1F5F9 100%);
+  --bg-sidebar: #ffffff;
+  --bg-panel: #ffffff;
+  --bg-panel-2: #F8FAFC;
+  --bg-card: linear-gradient(135deg, #ffffff 0%, #F8FAFC 100%);
+  --bg-detail: linear-gradient(180deg, #ffffff 0%, #F8FAFC 100%);
+  --bg-chip: #F1F5F9;
+  --bg-overlay: rgba(15,23,42,0.35);
+
+  --border-strong: #CBD5E1;
+  --border: #E2E8F0;
+  --border-soft: #94A3B8;
+
+  --text-primary: #0F172A;
+  --text: #1E293B;
+  --text-dim: #334155;
+  --text-muted: #64748B;
+  --text-faint: #94A3B8;
+  --text-quiet: #94A3B8;
+  --text-ghost: #CBD5E1;
+
+  --scroll-thumb: #CBD5E1;
+  --scroll-thumb-hover: #94A3B8;
+}
+
 body {
-  background: #0B1624;
-  color: #e2e8f0;
+  background: var(--bg-body);
+  color: var(--text);
   font-family: 'Inter', system-ui, sans-serif;
-  background-image: radial-gradient(circle at 1px 1px, #1A2F45 1px, transparent 0);
+  background-image: radial-gradient(circle at 1px 1px, var(--bg-dot) 1px, transparent 0);
   background-size: 28px 28px;
 }
 
 /* Scrollbar */
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #243B55; border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: #2D4F6E; }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--scroll-thumb-hover); }
 
 /* ── Keyframes ── */
 

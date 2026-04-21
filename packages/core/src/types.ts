@@ -65,6 +65,26 @@ export interface CardLogEntry {
   action: string;
   detail?: string;
   timestamp: string;
+  tokens?: number;
+}
+
+// ─── Dependencies ─────────────────────────────────────────────────────────────
+
+export interface CardDependency {
+  card_id: string;
+  blocked_by_id: string;
+  created_at: string;
+}
+
+// ─── Cost ─────────────────────────────────────────────────────────────────────
+
+export interface CostStats {
+  total_tokens: number;
+  total_cost_usd: number;
+  card_count: number;
+  budget_limit_usd: number | null;
+  over_budget: boolean;
+  by_agent: Array<{ agent: AgentId | 'human'; tokens: number; cost_usd: number }>;
 }
 
 export interface Card {
@@ -116,6 +136,10 @@ export interface GlobalConfig {
   default_model: string;
   default_provider: 'anthropic' | 'openai';
   server_port: number;
+  /** Blended USD price per 1,000,000 tokens — used for cost estimation. */
+  token_price_per_million?: number;
+  /** Optional per-repo budget limits in USD, keyed by repo id. */
+  repo_budgets_usd?: Record<string, number>;
 }
 
 export interface RepoConfig {
@@ -146,6 +170,9 @@ export type WSEventType =
   | 'card:updated'
   | 'card:column_changed'
   | 'card:log_appended'
+  | 'card:dependency_added'
+  | 'card:dependency_removed'
+  | 'repo:budget_warning'
   | 'agent:started'
   | 'agent:finished'
   | 'agent:live_feed';

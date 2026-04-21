@@ -3,7 +3,7 @@ import cors from 'cors';
 import { WebSocketServer, WebSocket } from 'ws';
 import http from 'http';
 import path from 'path';
-import { DBClient, DB_PATH } from '@useragent0/core';
+import { DBClient, DB_PATH, DEFAULT_TOKEN_PRICE_PER_MILLION, readGlobalConfig } from '@useragent0/core';
 import { MCP_TOOLS } from '@useragent0/core';
 import type { KanbanColumn, AgentId, CardAnnotation } from '@useragent0/core';
 
@@ -29,6 +29,31 @@ function broadcast(event: { type: string; payload: unknown }) {
 wss.on('connection', (ws) => {
   ws.send(JSON.stringify({ type: 'connected', payload: { message: 'useragent0 server connected' } }));
 });
+
+// ─── Cost helpers ─────────────────────────────────────────────────────────────
+
+function getCostForRepo(repoId: string) {
+  const cfg = readGlobalConfig();
+  const price = cfg.token_price_per_million ?? DEFAULT_TOKEN_PRICE_PER_MILLION;
+  const budget = cfg.repo_budgets_usd?.[repoId] ?? null;
+  return db.getRepoCostStats(repoId, price, budget);
+}
+
+/** Called after a card log is appended — broadcasts a budget warning if we crossed the line. */
+function checkBudget(repoId: string) {
+  const stats = getCostForRepo(repoId);
+  if (stats.over_budget) {
+    broadcast({
+      type: 'repo:budget_warning',
+      payload: {
+        repo_id: repoId,
+        total_cost_usd: stats.total_cost_usd,
+        budget_limit_usd: stats.budget_limit_usd,
+        total_tokens: stats.total_tokens,
+      },
+    });
+  }
+}
 
 // ─── REST API ─────────────────────────────────────────────────────────────────
 
@@ -79,19 +104,61 @@ app.get('/api/cards/:cardId', (req, res) => {
 app.patch('/api/cards/:cardId/move', (req, res) => {
   const { column, moved_by } = req.body;
   if (!column) return res.status(400).json({ error: 'column required' });
-  const card = db.moveCard(req.params.cardId, column as KanbanColumn, moved_by ?? 'human');
-  if (!card) return res.status(404).json({ error: 'Card not found' });
-  broadcast({ type: 'card:column_changed', payload: card });
-  res.json(card);
+  try {
+    const card = db.moveCard(req.params.cardId, column as KanbanColumn, moved_by ?? 'human');
+    if (!card) return res.status(404).json({ error: 'Card not found' });
+    broadcast({ type: 'card:column_changed', payload: card });
+    res.json(card);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    res.status(409).json({ error: message });
+  }
 });
 
 app.post('/api/cards/:cardId/log', (req, res) => {
-  const { agent, action, detail } = req.body;
+  const { agent, action, detail, tokens } = req.body;
   if (!agent || !action) return res.status(400).json({ error: 'agent and action required' });
-  const card = db.appendLog(req.params.cardId, { agent, action, detail });
+  const card = db.appendLog(req.params.cardId, { agent, action, detail, tokens });
   if (!card) return res.status(404).json({ error: 'Card not found' });
   broadcast({ type: 'card:log_appended', payload: card });
+  if (tokens) checkBudget(card.repo_id);
   res.json(card);
+});
+
+// Dependencies
+app.get('/api/cards/:cardId/dependencies', (req, res) => {
+  const card = db.getCard(req.params.cardId);
+  if (!card) return res.status(404).json({ error: 'Card not found' });
+  res.json({
+    blocked_by: db.getBlockedBy(req.params.cardId),
+    blocks: db.getBlocks(req.params.cardId),
+  });
+});
+
+app.post('/api/cards/:cardId/dependencies', (req, res) => {
+  const { blocked_by_id } = req.body;
+  if (!blocked_by_id) return res.status(400).json({ error: 'blocked_by_id required' });
+  try {
+    const dep = db.addDependency(req.params.cardId, blocked_by_id);
+    broadcast({ type: 'card:dependency_added', payload: dep });
+    res.json(dep);
+  } catch (err) {
+    res.status(400).json({ error: err instanceof Error ? err.message : String(err) });
+  }
+});
+
+app.delete('/api/cards/:cardId/dependencies/:blockedById', (req, res) => {
+  db.removeDependency(req.params.cardId, req.params.blockedById);
+  broadcast({
+    type: 'card:dependency_removed',
+    payload: { card_id: req.params.cardId, blocked_by_id: req.params.blockedById },
+  });
+  res.json({ ok: true });
+});
+
+// Cost
+app.get('/api/repos/:repoId/cost', (req, res) => {
+  res.json(getCostForRepo(req.params.repoId));
 });
 
 app.post('/api/cards/:cardId/bounce', (req, res) => {
@@ -204,11 +271,39 @@ async function handleMCPTool(name: string, input: Record<string, unknown>) {
     }
 
     case 'append_log': {
-      const { card_id, agent, action, detail } = input as { card_id: string; agent: string; action: string; detail?: string };
-      const card = db.appendLog(card_id, { agent: agent as AgentId | 'human', action, detail });
+      const { card_id, agent, action, detail, tokens } = input as { card_id: string; agent: string; action: string; detail?: string; tokens?: number };
+      const card = db.appendLog(card_id, { agent: agent as AgentId | 'human', action, detail, tokens });
       if (!card) throw new Error(`Card ${card_id} not found`);
       broadcast({ type: 'card:log_appended', payload: card });
+      if (tokens) checkBudget(card.repo_id);
       return card;
+    }
+
+    case 'add_dependency': {
+      const { card_id, blocked_by_id } = input as { card_id: string; blocked_by_id: string };
+      const dep = db.addDependency(card_id, blocked_by_id);
+      broadcast({ type: 'card:dependency_added', payload: dep });
+      return dep;
+    }
+
+    case 'remove_dependency': {
+      const { card_id, blocked_by_id } = input as { card_id: string; blocked_by_id: string };
+      db.removeDependency(card_id, blocked_by_id);
+      broadcast({ type: 'card:dependency_removed', payload: { card_id, blocked_by_id } });
+      return { ok: true };
+    }
+
+    case 'get_dependencies': {
+      const { card_id } = input as { card_id: string };
+      return {
+        blocked_by: db.getBlockedBy(card_id),
+        blocks: db.getBlocks(card_id),
+      };
+    }
+
+    case 'get_repo_cost': {
+      const { repo_id } = input as { repo_id: string };
+      return getCostForRepo(repo_id);
     }
 
     case 'bounce_card': {

@@ -132,7 +132,7 @@ export const MCP_TOOLS = [
   },
   {
     name: 'append_log',
-    description: 'Append a log entry to a card. Use this to record agent progress, files changed, or actions taken.',
+    description: 'Append a log entry to a card. Use this to record agent progress, files changed, or actions taken. Include tokens used in this action for cost tracking.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -140,8 +140,51 @@ export const MCP_TOOLS = [
         agent: { type: 'string' },
         action: { type: 'string' },
         detail: { type: 'string' },
+        tokens: { type: 'number', description: 'Tokens consumed by this action (for cost tracking).' },
       },
       required: ['card_id', 'agent', 'action'],
+    },
+  },
+  {
+    name: 'add_dependency',
+    description: 'Mark a card as blocked by another card. The blocked card cannot move to in_progress until the blocker reaches done.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        card_id: { type: 'string', description: 'The card that is being blocked.' },
+        blocked_by_id: { type: 'string', description: 'The card that must complete first.' },
+      },
+      required: ['card_id', 'blocked_by_id'],
+    },
+  },
+  {
+    name: 'remove_dependency',
+    description: 'Remove a blocking relationship between two cards.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        card_id: { type: 'string' },
+        blocked_by_id: { type: 'string' },
+      },
+      required: ['card_id', 'blocked_by_id'],
+    },
+  },
+  {
+    name: 'get_dependencies',
+    description: 'Return the cards this card is blocked_by and the cards it blocks.',
+    inputSchema: {
+      type: 'object',
+      properties: { card_id: { type: 'string' } },
+      required: ['card_id'],
+    },
+  },
+  {
+    name: 'get_repo_cost',
+    description: 'Return aggregate token usage and USD cost for a repo, plus whether it is over the configured budget.',
+    inputSchema: {
+      type: 'object',
+      properties: { repo_id: { type: 'string' } },
+      required: ['repo_id'],
     },
   },
   {
